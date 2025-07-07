@@ -5,6 +5,7 @@ import com.eventosacademicos.model.UserType;
 public class AuthResponse {
     
     private String token;
+    private Long id;
     private String username;
     private UserType userType;
     private String message;
@@ -12,8 +13,9 @@ public class AuthResponse {
     // Construtores
     public AuthResponse() {}
     
-    public AuthResponse(String token, String username, UserType userType) {
+    public AuthResponse(String token, Long id, String username, UserType userType) {
         this.token = token;
+        this.id = id;
         this.username = username;
         this.userType = userType;
     }
@@ -53,5 +55,13 @@ public class AuthResponse {
     
     public void setMessage(String message) {
         this.message = message;
+    }
+    
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
     }
 } 

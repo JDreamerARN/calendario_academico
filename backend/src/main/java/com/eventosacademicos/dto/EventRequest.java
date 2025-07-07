@@ -73,4 +73,15 @@ public class EventRequest {
     public void setMemberIds(List<Long> memberIds) {
         this.memberIds = memberIds;
     }
+
+    @Override
+    public String toString() {
+        return "EventRequest{" +
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", eventType=" + eventType +
+                ", date=" + date +
+                ", memberIds=" + memberIds +
+                '}';
+    }
 } 

@@ -28,8 +28,14 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
         
+        String userId = null;
+        if (userDetails instanceof CustomUserDetails) {
+            userId = ((CustomUserDetails) userDetails).getId().toString();
+        }
+        
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
+                .claim("userId", userId)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS512)
@@ -44,6 +50,17 @@ public class JwtTokenProvider {
                 .getBody();
         
         return claims.getSubject();
+    }
+    
+    public Long getUserIdFromJWT(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        
+        String userId = claims.get("userId", String.class);
+        return userId != null ? Long.parseLong(userId) : null;
     }
     
     public boolean validateToken(String authToken) {

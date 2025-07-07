@@ -1,6 +1,7 @@
 package com.eventosacademicos.controller;
 
 import com.eventosacademicos.dto.EventRequest;
+import com.eventosacademicos.dto.EventResponseDTO;
 import com.eventosacademicos.model.Event;
 import com.eventosacademicos.model.EventMember;
 import com.eventosacademicos.model.EventType;
@@ -8,6 +9,8 @@ import com.eventosacademicos.model.User;
 import com.eventosacademicos.service.EventService;
 import com.eventosacademicos.service.UserService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,6 +26,8 @@ import java.util.Set;
 @CrossOrigin(origins = "*")
 public class EventController {
     
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
+    
     @Autowired
     private EventService eventService;
     
@@ -32,6 +37,7 @@ public class EventController {
     @PostMapping
     public ResponseEntity<Event> createEvent(@Valid @RequestBody EventRequest eventRequest) {
         try {
+            logger.info("Recebendo requisição para criar evento: {}", eventRequest);
             // Obter usuário atual
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             User currentUser = userService.getUserByUsername(auth.getName())
@@ -55,8 +61,10 @@ public class EventController {
                 }
             }
             
+            logger.info("Evento criado com sucesso: {}", createdEvent);
             return ResponseEntity.ok(createdEvent);
         } catch (RuntimeException e) {
+            logger.error("Erro ao criar evento: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -83,9 +91,9 @@ public class EventController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+    public ResponseEntity<EventResponseDTO> getEventById(@PathVariable Long id) {
         return eventService.getEventById(id)
-                .map(ResponseEntity::ok)
+                .map(event -> ResponseEntity.ok(EventService.toEventResponseDTO(event)))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -166,11 +174,16 @@ public class EventController {
     
     @DeleteMapping("/{eventId}/members/{userId}")
     public ResponseEntity<?> removeMemberFromEvent(@PathVariable Long eventId, @PathVariable Long userId) {
+        System.out.println("[CONTROLLER] Requisição para remover membro: eventId=" + eventId + ", userId=" + userId);
         try {
+            System.out.println("[CONTROLLER] Chamando service.removeMemberFromEvent...");
             eventService.removeMemberFromEvent(eventId, userId);
+            System.out.println("[CONTROLLER] Membro removido com sucesso!");
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            System.out.println("[CONTROLLER] Erro ao remover membro: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("Erro ao remover membro: " + e.getMessage());
         }
     }
 } 

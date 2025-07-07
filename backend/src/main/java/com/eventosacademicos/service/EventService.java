@@ -9,11 +9,16 @@ import com.eventosacademicos.repository.EventRepository;
 import com.eventosacademicos.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.eventosacademicos.dto.EventResponseDTO;
+import com.eventosacademicos.dto.EventMemberDTO;
 
 @Service
 public class EventService {
@@ -117,14 +122,38 @@ public class EventService {
         return event;
     }
     
+    @Transactional
     public void removeMemberFromEvent(Long eventId, Long userId) {
+        System.out.println("[SERVICE] Iniciando remoção de membro: eventId=" + eventId + ", userId=" + userId);
+        
+        System.out.println("[SERVICE] Buscando evento com ID: " + eventId);
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Evento não encontrado"));
+                .orElseThrow(() -> {
+                    System.out.println("[SERVICE] ERRO: Evento não encontrado com ID: " + eventId);
+                    return new RuntimeException("Evento não encontrado");
+                });
+        System.out.println("[SERVICE] Evento encontrado: " + event.getTitle());
         
+        System.out.println("[SERVICE] Buscando usuário com ID: " + userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> {
+                    System.out.println("[SERVICE] ERRO: Usuário não encontrado com ID: " + userId);
+                    return new RuntimeException("Usuário não encontrado");
+                });
+        System.out.println("[SERVICE] Usuário encontrado: " + user.getUsername());
         
+        System.out.println("[SERVICE] Verificando se usuário é membro do evento...");
+        boolean isMember = eventMemberRepository.existsByEventAndUser(event, user);
+        System.out.println("[SERVICE] Usuário é membro do evento? " + isMember);
+        
+        if (!isMember) {
+            System.out.println("[SERVICE] ERRO: Usuário não é membro deste evento");
+            throw new RuntimeException("Usuário não é membro deste evento");
+        }
+        
+        System.out.println("[SERVICE] Removendo membro do evento...");
         eventMemberRepository.deleteByEventAndUser(event, user);
+        System.out.println("[SERVICE] Remoção concluída para: eventId=" + eventId + ", userId=" + userId);
     }
     
     public Set<EventMember> getEventMembers(Long eventId) {
@@ -136,6 +165,11 @@ public class EventService {
     
     private void validateEventCreation(Event event) {
         User creator = event.getCreatedBy();
+        
+        // Administradores podem criar qualquer tipo de evento
+        if (creator.getUserType() == com.eventosacademicos.model.UserType.ADMINISTRADOR) {
+            return;
+        }
         
         // Professores podem criar provas e trabalhos
         if (event.getEventType() == EventType.PROVA || event.getEventType() == EventType.TRABALHO) {
@@ -170,5 +204,30 @@ public class EventService {
         
         // Criador do evento pode excluí-lo
         return event.getCreatedBy().getId().equals(currentUser.getId());
+    }
+
+    public static EventResponseDTO toEventResponseDTO(Event event) {
+        EventMemberDTO.UserSummaryDTO organizer = new EventMemberDTO.UserSummaryDTO(
+            event.getCreatedBy().getId(),
+            event.getCreatedBy().getUsername()
+        );
+        java.util.List<EventMemberDTO> members = event.getMembers().stream().map(member ->
+            new EventMemberDTO(
+                member.getId(),
+                new EventMemberDTO.UserSummaryDTO(
+                    member.getUser().getId(),
+                    member.getUser().getUsername()
+                )
+            )
+        ).collect(Collectors.toList());
+        return new EventResponseDTO(
+            event.getId(),
+            event.getTitle(),
+            event.getDescription(),
+            event.getEventType(),
+            event.getDate(),
+            organizer,
+            members
+        );
     }
 } 

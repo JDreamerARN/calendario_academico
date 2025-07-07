@@ -44,7 +44,7 @@ public class AuthController {
             
             User user = userService.getUserByUsername(loginRequest.getUsername()).orElse(null);
             
-            return ResponseEntity.ok(new AuthResponse(jwt, user.getUsername(), user.getUserType()));
+            return ResponseEntity.ok(new AuthResponse(jwt, user.getId(), user.getUsername(), user.getUserType()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new AuthResponse("Credenciais inválidas"));
         }

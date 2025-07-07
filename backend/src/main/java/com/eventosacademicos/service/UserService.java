@@ -3,6 +3,7 @@ package com.eventosacademicos.service;
 import com.eventosacademicos.model.User;
 import com.eventosacademicos.model.UserType;
 import com.eventosacademicos.repository.UserRepository;
+import com.eventosacademicos.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,10 +34,12 @@ public class UserService implements UserDetailsService {
             throw new UsernameNotFoundException("Usuário não aprovado: " + username);
         }
         
-        return new org.springframework.security.core.userdetails.User(
+        return new CustomUserDetails(
+                user.getId(),
                 user.getUsername(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getUserType().name()))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getUserType().name())),
+                user.isApproved()
         );
     }
     
@@ -79,6 +82,10 @@ public class UserService implements UserDetailsService {
     
     public List<User> getAllUsers() {
         return userRepository.findAll();
+    }
+    
+    public List<User> getAllApprovedUsers() {
+        return userRepository.findByApproved(true);
     }
     
     public Optional<User> getUserById(Long id) {
