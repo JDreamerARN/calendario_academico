@@ -4,6 +4,7 @@ import com.eventosacademicos.dto.AuthResponse;
 import com.eventosacademicos.dto.LoginRequest;
 import com.eventosacademicos.dto.RegisterRequest;
 import com.eventosacademicos.model.User;
+import com.eventosacademicos.model.UserType;
 import com.eventosacademicos.security.JwtTokenProvider;
 import com.eventosacademicos.service.UserService;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -31,6 +34,14 @@ public class AuthController {
     
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        Optional<String> pendingMessage = userService.getPendingApprovalMessage(
+                loginRequest.getUsername(),
+                loginRequest.getPassword()
+        );
+        if (pendingMessage.isPresent()) {
+            return ResponseEntity.badRequest().body(new AuthResponse(pendingMessage.get()));
+        }
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -62,9 +73,13 @@ public class AuthController {
                 registerRequest.getUserType()
             );
             
-            User savedUser = userService.createUser(user);
+            userService.createUser(user);
             
-            return ResponseEntity.ok(new AuthResponse("Usuário registrado com sucesso. Aguarde aprovação do administrador."));
+            String message = registerRequest.getUserType() == UserType.ADMINISTRADOR
+                    ? "Usuário administrador registrado com sucesso. Você já pode fazer login."
+                    : "Usuário registrado com sucesso. Aguarde aprovação do administrador.";
+            
+            return ResponseEntity.ok(new AuthResponse(message));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new AuthResponse(e.getMessage()));
         }

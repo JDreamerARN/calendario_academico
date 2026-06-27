@@ -58,8 +58,8 @@ public class UserService implements UserDetailsService {
         // Criptografar senha
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
-        // Usuário criado como não aprovado por padrão
-        user.setApproved(false);
+        // Administradores são aprovados automaticamente; demais usuários aguardam aprovação
+        user.setApproved(user.getUserType() == UserType.ADMINISTRADOR);
         
         return userRepository.save(user);
     }
@@ -133,5 +133,12 @@ public class UserService implements UserDetailsService {
             return user.isApproved() && passwordEncoder.matches(password, user.getPassword());
         }
         return false;
+    }
+
+    public Optional<String> getPendingApprovalMessage(String username, String rawPassword) {
+        return userRepository.findByUsername(username)
+                .filter(user -> !user.isApproved())
+                .filter(user -> passwordEncoder.matches(rawPassword, user.getPassword()))
+                .map(user -> "Conta pendente de aprovação pelo administrador.");
     }
 } 
