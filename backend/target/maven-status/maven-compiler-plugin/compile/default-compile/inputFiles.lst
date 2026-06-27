@@ -1,3 +1,4 @@
+/app/src/main/java/com/eventosacademicos/config/SchemaMigration.java
 /app/src/main/java/com/eventosacademicos/dto/CommentRequest.java
 /app/src/main/java/com/eventosacademicos/model/Comment.java
 /app/src/main/java/com/eventosacademicos/dto/EventRequest.java

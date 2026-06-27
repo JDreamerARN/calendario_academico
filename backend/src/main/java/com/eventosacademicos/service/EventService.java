@@ -217,7 +217,8 @@ public class EventService {
                 )
             )
         ).collect(Collectors.toList());
-        List<CommentDTO> comments = event.getComments().stream()
+        List<CommentDTO> comments = (event.getComments() != null ? event.getComments() : java.util.List.<com.eventosacademicos.model.Comment>of())
+                .stream()
                 .map(CommentDTO::fromEntity)
                 .collect(Collectors.toList());
         return new EventResponseDTO(

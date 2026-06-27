@@ -48,9 +48,15 @@ public class EventController {
                 .filter(tag -> !tag.isEmpty())
                 .collect(Collectors.toSet());
     }
+
+    private EventResponseDTO toDto(Long eventId, User currentUser) {
+        return eventService.getEventById(eventId, currentUser)
+                .map(EventService::toEventResponseDTO)
+                .orElseThrow(() -> new RuntimeException("Evento não encontrado"));
+    }
     
     @PostMapping
-    public ResponseEntity<Event> createEvent(@Valid @RequestBody EventRequest eventRequest) {
+    public ResponseEntity<EventResponseDTO> createEvent(@Valid @RequestBody EventRequest eventRequest) {
         try {
             logger.info("Recebendo requisição para criar evento: {}", eventRequest);
             User currentUser = getCurrentUser();
@@ -78,7 +84,7 @@ public class EventController {
             }
             
             logger.info("Evento criado com sucesso: {}", createdEvent);
-            return ResponseEntity.ok(createdEvent);
+            return ResponseEntity.ok(toDto(createdEvent.getId(), currentUser));
         } catch (RuntimeException e) {
             logger.error("Erro ao criar evento: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
@@ -122,7 +128,7 @@ public class EventController {
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @Valid @RequestBody EventRequest eventRequest) {
+    public ResponseEntity<EventResponseDTO> updateEvent(@PathVariable Long id, @Valid @RequestBody EventRequest eventRequest) {
         try {
             User currentUser = getCurrentUser();
             
@@ -137,8 +143,8 @@ public class EventController {
                 eventDetails.setColor(eventRequest.getColor());
             }
             
-            Event updatedEvent = eventService.updateEvent(id, eventDetails, currentUser);
-            return ResponseEntity.ok(updatedEvent);
+            eventService.updateEvent(id, eventDetails, currentUser);
+            return ResponseEntity.ok(toDto(id, currentUser));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -156,11 +162,11 @@ public class EventController {
     }
     
     @PostMapping("/{eventId}/members/{userId}")
-    public ResponseEntity<Event> addMemberToEvent(@PathVariable Long eventId, @PathVariable Long userId) {
+    public ResponseEntity<EventResponseDTO> addMemberToEvent(@PathVariable Long eventId, @PathVariable Long userId) {
         try {
             User currentUser = getCurrentUser();
-            Event event = eventService.addMemberToEvent(eventId, userId, currentUser);
-            return ResponseEntity.ok(event);
+            eventService.addMemberToEvent(eventId, userId, currentUser);
+            return ResponseEntity.ok(toDto(eventId, currentUser));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
