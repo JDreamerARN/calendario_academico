@@ -74,6 +74,9 @@ public class EventService {
         if (eventDetails.getTags() != null) {
             event.setTags(new HashSet<>(eventDetails.getTags()));
         }
+        if (eventDetails.getColor() != null) {
+            event.setColor(eventDetails.getColor());
+        }
         
         return eventRepository.save(event);
     }
@@ -222,6 +225,7 @@ public class EventService {
             event.getTitle(),
             event.getDescription(),
             event.getTags() != null ? event.getTags() : java.util.Collections.emptySet(),
+            event.getColor() != null ? event.getColor() : "#1976d2",
             event.getDate(),
             organizer,
             members,

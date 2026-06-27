@@ -23,6 +23,7 @@ export interface Event {
   title: string;
   description: string;
   tags: string[];
+  color: string;
   date: string;
   organizer: {
     id: number;
@@ -68,6 +69,7 @@ export interface CreateEventRequest {
   title: string;
   description: string;
   tags: string[];
+  color: string;
   date: string;
   memberIds: number[];
 }
@@ -76,6 +78,7 @@ export interface UpdateEventRequest {
   title: string;
   description: string;
   tags: string[];
+  color: string;
   date: string;
   memberIds?: number[];
 }

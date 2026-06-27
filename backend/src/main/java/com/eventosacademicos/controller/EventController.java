@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/events")
@@ -41,6 +42,13 @@ public class EventController {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
     }
     
+    private Set<String> normalizeTags(List<String> tags) {
+        return tags.stream()
+                .map(String::trim)
+                .filter(tag -> !tag.isEmpty())
+                .collect(Collectors.toSet());
+    }
+    
     @PostMapping
     public ResponseEntity<Event> createEvent(@Valid @RequestBody EventRequest eventRequest) {
         try {
@@ -55,7 +63,10 @@ public class EventController {
             );
             
             if (eventRequest.getTags() != null) {
-                event.setTags(new HashSet<>(eventRequest.getTags()));
+                event.setTags(normalizeTags(eventRequest.getTags()));
+            }
+            if (eventRequest.getColor() != null && !eventRequest.getColor().isBlank()) {
+                event.setColor(eventRequest.getColor());
             }
             
             Event createdEvent = eventService.createEvent(event);
@@ -120,7 +131,10 @@ public class EventController {
             eventDetails.setDescription(eventRequest.getDescription());
             eventDetails.setDate(eventRequest.getDate());
             if (eventRequest.getTags() != null) {
-                eventDetails.setTags(new HashSet<>(eventRequest.getTags()));
+                eventDetails.setTags(normalizeTags(eventRequest.getTags()));
+            }
+            if (eventRequest.getColor() != null) {
+                eventDetails.setColor(eventRequest.getColor());
             }
             
             Event updatedEvent = eventService.updateEvent(id, eventDetails, currentUser);

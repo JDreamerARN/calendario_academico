@@ -1,7 +1,7 @@
 {
   "name": "sistema-eventos-academicos-frontend",
   "version": "1.0.0",
-  "description": "Frontend do Sistema de Eventos Acadêmicos",
+  "description": "Frontend do Calendário de Eventos",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.13.5",

@@ -21,7 +21,7 @@ import { Event } from '../types';
 import { useEvents } from '../hooks/useEvents';
 import LoadingSpinner from './LoadingSpinner';
 import EventDetailsModal from './EventDetailsModal';
-import { getEventColor, getTagColor } from '../utils/tagColors';
+import { getEventDisplayColors, getTagColor } from '../utils/tagColors';
 
 interface CalendarProps {
   onAddEvent?: () => void;
@@ -267,7 +267,7 @@ const Calendar: React.FC<CalendarProps> = ({ onAddEvent }) => {
                   </Typography>
                   
                   {getEventsForDay(day).map((event) => {
-                    const colors = getEventColor(event.tags || []);
+                    const colors = getEventDisplayColors(event.color);
                     return (
                       <Chip
                         key={event.id}

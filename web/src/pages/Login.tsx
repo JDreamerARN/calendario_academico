@@ -87,7 +87,7 @@ const Login: React.FC = () => {
                   mb: 1,
                 }}
               >
-                Sistema de Eventos Acadêmicos
+                Sistema de Eventos
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Faça login para acessar sua conta

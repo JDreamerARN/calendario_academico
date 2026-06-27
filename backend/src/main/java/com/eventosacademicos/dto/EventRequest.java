@@ -15,6 +15,8 @@ public class EventRequest {
     
     private List<String> tags;
     
+    private String color;
+    
     @NotNull(message = "Data é obrigatória")
     private LocalDateTime date;
     
@@ -54,6 +56,14 @@ public class EventRequest {
         this.tags = tags;
     }
     
+    public String getColor() {
+        return color;
+    }
+    
+    public void setColor(String color) {
+        this.color = color;
+    }
+    
     public LocalDateTime getDate() {
         return date;
     }
@@ -76,6 +86,7 @@ public class EventRequest {
                 "title='" + title + '\'' +
                 ", description='" + description + '\'' +
                 ", tags=" + tags +
+                ", color=" + color +
                 ", date=" + date +
                 ", memberIds=" + memberIds +
                 '}';

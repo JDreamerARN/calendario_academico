@@ -32,6 +32,9 @@ public class Event {
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
     
+    @Column(nullable = false)
+    private String color = "#1976d2";
+    
     @NotNull(message = "Data é obrigatória")
     @Column(nullable = false)
     private LocalDateTime date;
@@ -89,6 +92,14 @@ public class Event {
     
     public void setTags(Set<String> tags) {
         this.tags = tags;
+    }
+    
+    public String getColor() {
+        return color;
+    }
+    
+    public void setColor(String color) {
+        this.color = color;
     }
     
     public LocalDateTime getDate() {

@@ -20,7 +20,9 @@ import { ptBR } from 'date-fns/locale';
 import apiService from '../services/api';
 import { CreateEventRequest, UserSummary } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { getTagColor } from '../utils/tagColors';
+import { DEFAULT_EVENT_COLOR } from '../utils/tagColors';
+import TagInput from './TagInput';
+import ColorPicker from './ColorPicker';
 
 interface AddEventModalProps {
   open: boolean;
@@ -41,6 +43,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     title: '',
     description: '',
     tags: [] as string[],
+    color: DEFAULT_EVENT_COLOR,
     date: new Date(),
     memberIds: [] as number[],
   });
@@ -114,6 +117,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       title: formData.title.trim(),
       description: formData.description.trim(),
       tags: formData.tags,
+      color: formData.color,
       date: formData.date.toISOString(),
       memberIds: user?.id ? [...formData.memberIds, user.id] : formData.memberIds,
     };
@@ -126,6 +130,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       title: '',
       description: '',
       tags: [],
+      color: DEFAULT_EVENT_COLOR,
       date: new Date(),
       memberIds: [],
     });
@@ -174,41 +179,14 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
 
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
-              value={formData.tags}
-              onChange={(_event, newValue) => {
-                setFormData(prev => ({
-                  ...prev,
-                  tags: newValue.map(v => (typeof v === 'string' ? v.trim() : v)).filter(Boolean) as string[],
-                }));
-              }}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                  const colors = getTagColor(option);
-                  return (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option}
-                      label={option}
-                      size="small"
-                      sx={{ backgroundColor: colors.bg, color: colors.text }}
-                    />
-                  );
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Tags"
-                  placeholder="Digite e pressione Enter..."
-                  variant="outlined"
-                  helperText="Adicione tags livres para organizar o evento"
-                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                />
-              )}
+            <TagInput
+              tags={formData.tags}
+              onChange={(tags) => setFormData(prev => ({ ...prev, tags }))}
+            />
+
+            <ColorPicker
+              color={formData.color}
+              onChange={(color) => setFormData(prev => ({ ...prev, color }))}
             />
 
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>

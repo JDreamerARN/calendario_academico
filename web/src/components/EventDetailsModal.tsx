@@ -38,7 +38,9 @@ import { UpdateEventRequest, UserSummary, Comment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
 import { useEvent } from '../hooks/useEvents';
-import { getTagColor } from '../utils/tagColors';
+import { getTagColor, DEFAULT_EVENT_COLOR } from '../utils/tagColors';
+import TagInput from './TagInput';
+import ColorPicker from './ColorPicker';
 
 interface EventDetailsModalProps {
   open: boolean;
@@ -71,6 +73,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     title: '',
     description: '',
     tags: [],
+    color: DEFAULT_EVENT_COLOR,
     date: '',
   });
 
@@ -98,6 +101,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         title: updatedEvent.title,
         description: updatedEvent.description,
         tags: updatedEvent.tags || [],
+        color: updatedEvent.color || DEFAULT_EVENT_COLOR,
         date: updatedEvent.date,
       });
       const memberIds = updatedEvent.members.map((member) => member.user.id);
@@ -138,6 +142,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         title: event.title,
         description: event.description,
         tags: event.tags || [],
+        color: event.color || DEFAULT_EVENT_COLOR,
         date: event.date,
       });
       const memberIds = event.members.map(member => member.user.id);
@@ -162,6 +167,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
         title: event.title,
         description: event.description,
         tags: event.tags || [],
+        color: event.color || DEFAULT_EVENT_COLOR,
         date: event.date,
       });
       const memberIds = event.members.map(member => member.user.id);
@@ -299,9 +305,20 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">
-            {isEditing ? 'Editar Evento' : event.title}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                backgroundColor: event.color || DEFAULT_EVENT_COLOR,
+                flexShrink: 0,
+              }}
+            />
+            <Typography variant="h6">
+              {isEditing ? 'Editar Evento' : event.title}
+            </Typography>
+          </Box>
           <IconButton onClick={handleClose} disabled={isLoading}>
             <CloseIcon />
           </IconButton>
@@ -344,34 +361,9 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
           )}
 
           {isEditing ? (
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
-              value={editData.tags}
-              onChange={(_event, newValue) => {
-                setEditData(prev => ({
-                  ...prev,
-                  tags: newValue.map(v => (typeof v === 'string' ? v.trim() : v)).filter(Boolean) as string[],
-                }));
-              }}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => {
-                  const colors = getTagColor(option);
-                  return (
-                    <Chip
-                      {...getTagProps({ index })}
-                      key={option}
-                      label={option}
-                      size="small"
-                      sx={{ backgroundColor: colors.bg, color: colors.text }}
-                    />
-                  );
-                })
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Tags" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
-              )}
+            <TagInput
+              tags={editData.tags}
+              onChange={(tags) => setEditData(prev => ({ ...prev, tags }))}
             />
           ) : (
             <Box>
@@ -393,6 +385,30 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               ) : (
                 <Typography variant="body2" color="text.secondary">Nenhuma tag</Typography>
               )}
+            </Box>
+          )}
+
+          {isEditing ? (
+            <ColorPicker
+              color={editData.color}
+              onChange={(color) => setEditData(prev => ({ ...prev, color }))}
+            />
+          ) : (
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Cor do evento</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 1,
+                    backgroundColor: event.color || DEFAULT_EVENT_COLOR,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                />
+                <Typography variant="body2">{event.color || DEFAULT_EVENT_COLOR}</Typography>
+              </Box>
             </Box>
           )}
 
