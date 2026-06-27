@@ -1,6 +1,5 @@
 package com.eventosacademicos.dto;
 
-import com.eventosacademicos.model.EventType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,26 +13,23 @@ public class EventRequest {
     
     private String description;
     
-    @NotNull(message = "Tipo de evento é obrigatório")
-    private EventType eventType;
+    private List<String> tags;
     
     @NotNull(message = "Data é obrigatória")
     private LocalDateTime date;
     
     private List<Long> memberIds;
     
-    // Construtores
     public EventRequest() {}
     
-    public EventRequest(String title, String description, EventType eventType, LocalDateTime date, List<Long> memberIds) {
+    public EventRequest(String title, String description, List<String> tags, LocalDateTime date, List<Long> memberIds) {
         this.title = title;
         this.description = description;
-        this.eventType = eventType;
+        this.tags = tags;
         this.date = date;
         this.memberIds = memberIds;
     }
     
-    // Getters e Setters
     public String getTitle() {
         return title;
     }
@@ -50,12 +46,12 @@ public class EventRequest {
         this.description = description;
     }
     
-    public EventType getEventType() {
-        return eventType;
+    public List<String> getTags() {
+        return tags;
     }
     
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
+    public void setTags(List<String> tags) {
+        this.tags = tags;
     }
     
     public LocalDateTime getDate() {
@@ -79,9 +75,9 @@ public class EventRequest {
         return "EventRequest{" +
                 "title='" + title + '\'' +
                 ", description='" + description + '\'' +
-                ", eventType=" + eventType +
+                ", tags=" + tags +
                 ", date=" + date +
                 ", memberIds=" + memberIds +
                 '}';
     }
-} 
+}

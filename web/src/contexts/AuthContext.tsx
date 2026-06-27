@@ -125,8 +125,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem('events');
     localStorage.removeItem('users');
     localStorage.removeItem('selectedDate');
-    localStorage.removeItem('eventTypeFilter');
-    localStorage.removeItem('userTypeFilter');
+    localStorage.removeItem('tagFilter');
     console.log('🧹 Dados específicos da aplicação limpos');
     
     // Forçar recarregamento da página para garantir limpeza completa

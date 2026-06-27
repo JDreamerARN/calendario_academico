@@ -160,21 +160,6 @@ const Profile: React.FC = () => {
               <ListItem>
                 <ListItemText primary="Telefone" secondary={user.phone} />
               </ListItem>
-              <ListItem>
-                <ListItemText primary="Senha (hash)" secondary={user.password} />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary="Matrícula" secondary={user.registrationNumber} />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary="Tipo de usuário" secondary={user.userType} />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary="Aprovado" secondary={user.approved ? 'Sim' : 'Não'} />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary="Criado em" secondary={user.createdAt} />
-              </ListItem>
             </List>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" sx={{ mb: 1 }}>Eventos que participa</Typography>

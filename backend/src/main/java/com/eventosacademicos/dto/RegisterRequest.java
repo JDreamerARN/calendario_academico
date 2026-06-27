@@ -1,9 +1,7 @@
 package com.eventosacademicos.dto;
 
-import com.eventosacademicos.model.UserType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequest {
@@ -23,26 +21,15 @@ public class RegisterRequest {
     @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
     private String password;
     
-    @NotBlank(message = "Número de matrícula é obrigatório")
-    private String registrationNumber;
-    
-    @NotNull(message = "Tipo de usuário é obrigatório")
-    private UserType userType;
-    
-    // Construtores
     public RegisterRequest() {}
     
-    public RegisterRequest(String username, String email, String phone, String password, 
-                          String registrationNumber, UserType userType) {
+    public RegisterRequest(String username, String email, String phone, String password) {
         this.username = username;
         this.email = email;
         this.phone = phone;
         this.password = password;
-        this.registrationNumber = registrationNumber;
-        this.userType = userType;
     }
     
-    // Getters e Setters
     public String getUsername() {
         return username;
     }
@@ -74,20 +61,4 @@ public class RegisterRequest {
     public void setPassword(String password) {
         this.password = password;
     }
-    
-    public String getRegistrationNumber() {
-        return registrationNumber;
-    }
-    
-    public void setRegistrationNumber(String registrationNumber) {
-        this.registrationNumber = registrationNumber;
-    }
-    
-    public UserType getUserType() {
-        return userType;
-    }
-    
-    public void setUserType(UserType userType) {
-        this.userType = userType;
-    }
-} 
+}

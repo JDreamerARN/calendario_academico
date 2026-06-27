@@ -8,10 +8,6 @@ import {
   Container,
   Alert,
   Link,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -25,8 +21,6 @@ const Register: React.FC = () => {
     phone: '',
     password: '',
     confirmPassword: '',
-    registrationNumber: '',
-    userType: 'ALUNO' as 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -36,7 +30,7 @@ const Register: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement | { value: unknown }>) => {
+  const handleChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
       ...prev,
       [field]: event.target.value,
@@ -71,10 +65,10 @@ const Register: React.FC = () => {
     try {
       const { confirmPassword, ...registerData } = formData;
       await apiService.register(registerData);
-      setSuccess('Usuário registrado com sucesso! Aguarde aprovação do administrador.');
+      setSuccess('Usuário registrado com sucesso! Você já pode fazer login.');
       setTimeout(() => {
         navigate('/login');
-      }, 3000);
+      }, 2000);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao registrar usuário.';
       setError(errorMessage);
@@ -150,11 +144,7 @@ const Register: React.FC = () => {
                 required
                 fullWidth
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <TextField
                 label="Email"
@@ -164,11 +154,7 @@ const Register: React.FC = () => {
                 required
                 fullWidth
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <TextField
                 label="Telefone"
@@ -177,45 +163,8 @@ const Register: React.FC = () => {
                 required
                 fullWidth
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
-              <TextField
-                label="Número de matrícula"
-                value={formData.registrationNumber}
-                onChange={handleChange('registrationNumber')}
-                required
-                fullWidth
-                variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
-              />
-              <Box sx={{ gridColumn: { xs: '1 / -1', sm: '1 / -1' } }}>
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel>Tipo de usuário</InputLabel>
-                  <Select
-                    value={formData.userType}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      userType: e.target.value as 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR',
-                    }))}
-                    label="Tipo de usuário"
-                    sx={{
-                      borderRadius: 2,
-                    }}
-                  >
-                    <MenuItem value="ALUNO">Aluno</MenuItem>
-                    <MenuItem value="PROFESSOR">Professor</MenuItem>
-                    <MenuItem value="ADMINISTRADOR">Administrador</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
               <TextField
                 label="Senha"
                 type="password"
@@ -224,11 +173,7 @@ const Register: React.FC = () => {
                 required
                 fullWidth
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
               <TextField
                 label="Confirmar senha"
@@ -238,11 +183,7 @@ const Register: React.FC = () => {
                 required
                 fullWidth
                 variant="outlined"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                  },
-                }}
+                sx={{ gridColumn: { xs: '1 / -1', sm: '1 / -1' }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
               />
             </Box>
 
@@ -273,9 +214,7 @@ const Register: React.FC = () => {
                   sx={{
                     textDecoration: 'none',
                     fontWeight: 'bold',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
+                    '&:hover': { textDecoration: 'underline' },
                   }}
                 >
                   Faça login aqui
@@ -289,4 +228,4 @@ const Register: React.FC = () => {
   );
 };
 
-export default Register; 
+export default Register;

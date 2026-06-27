@@ -3,26 +3,33 @@ export interface User {
   username: string;
   email: string;
   phone: string;
-  registrationNumber: string;
-  userType: 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR';
-  approved: boolean;
-  createdAt: string;
   password?: string;
   eventMemberships?: EventMember[];
   createdEvents?: Event[];
+}
+
+export interface Comment {
+  id: number;
+  content: string;
+  author: {
+    id: number;
+    username: string;
+  };
+  createdAt: string;
 }
 
 export interface Event {
   id: number;
   title: string;
   description: string;
-  eventType: 'PROVA' | 'TRABALHO' | 'FESTA' | 'REUNIAO' | 'OUTRO';
+  tags: string[];
   date: string;
   organizer: {
     id: number;
     username: string;
   };
   members: EventMember[];
+  comments?: Comment[];
 }
 
 export interface EventMember {
@@ -31,11 +38,11 @@ export interface EventMember {
     id: number;
     username: string;
   };
-  event: {
+  event?: {
     id: number;
     title: string;
   };
-  joinedAt: string;
+  joinedAt?: string;
 }
 
 export interface LoginRequest {
@@ -47,7 +54,6 @@ export interface LoginResponse {
   token: string;
   id: number;
   username: string;
-  userType: 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR';
   message: string | null;
 }
 
@@ -56,14 +62,12 @@ export interface RegisterRequest {
   email: string;
   phone: string;
   password: string;
-  registrationNumber: string;
-  userType: 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR';
 }
 
 export interface CreateEventRequest {
   title: string;
   description: string;
-  eventType: EventType;
+  tags: string[];
   date: string;
   memberIds: number[];
 }
@@ -71,7 +75,7 @@ export interface CreateEventRequest {
 export interface UpdateEventRequest {
   title: string;
   description: string;
-  eventType: 'PROVA' | 'TRABALHO' | 'FESTA' | 'REUNIAO' | 'OUTRO';
+  tags: string[];
   date: string;
   memberIds?: number[];
 }
@@ -80,8 +84,10 @@ export interface UpdateUserRequest {
   username: string;
   email: string;
   phone: string;
-  registrationNumber: string;
-  userType: 'ALUNO' | 'PROFESSOR' | 'ADMINISTRADOR';
+}
+
+export interface CommentRequest {
+  content: string;
 }
 
 export interface ApiResponse<T> {
@@ -90,4 +96,8 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-export type EventType = 'PROVA' | 'TRABALHO' | 'FESTA' | 'REUNIAO' | 'OUTRO'; 
+export interface UserSummary {
+  id: number;
+  username: string;
+  email: string;
+}

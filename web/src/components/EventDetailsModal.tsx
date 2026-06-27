@@ -10,14 +10,14 @@ import {
   Chip,
   IconButton,
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Alert,
   CircularProgress,
   Divider,
   Autocomplete,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemSecondaryAction,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -25,23 +25,20 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
   Delete as DeleteIcon,
-  Assignment as AssignmentIcon,
-  Quiz as QuizIcon,
-  Celebration as CelebrationIcon,
-  Group as GroupIcon,
-  Event as EventIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ptBR } from 'date-fns/locale';
 import { format, parseISO } from 'date-fns';
-import { UpdateEventRequest, User } from '../types';
+import { UpdateEventRequest, UserSummary, Comment } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
 import { useEvent } from '../hooks/useEvents';
+import { getTagColor } from '../utils/tagColors';
 
 interface EventDetailsModalProps {
   open: boolean;
@@ -63,128 +60,92 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserSummary[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   
   const [editData, setEditData] = useState<UpdateEventRequest>({
     title: '',
     description: '',
-    eventType: 'PROVA',
+    tags: [],
     date: '',
   });
 
-  // Buscar evento pelo ID
   const { event: eventFromHook, isLoading: isLoadingEvent, error: errorEvent } = useEvent(eventId ?? 0);
   const [localEvent, setLocalEvent] = useState(eventFromHook);
   
-  // Atualizar evento local quando o hook retornar dados
   React.useEffect(() => {
     if (eventFromHook) {
       setLocalEvent(eventFromHook);
+      if (eventFromHook.comments) {
+        setComments(eventFromHook.comments);
+      }
     }
   }, [eventFromHook]);
   
-  // Usar evento local como fonte de dados
   const event = localEvent;
 
-  // Função para recarregar os dados do evento
   const reloadEvent = React.useCallback(async () => {
     if (!eventId) return;
     
     try {
       const updatedEvent = await apiService.getEventById(eventId);
       setLocalEvent(updatedEvent);
-      // Atualizar dados de edição e membros
       setEditData({
         title: updatedEvent.title,
         description: updatedEvent.description,
-        eventType: updatedEvent.eventType,
+        tags: updatedEvent.tags || [],
         date: updatedEvent.date,
       });
-      const memberIds = updatedEvent.members.map((member: import('../types').EventMember) => member.user.id);
+      const memberIds = updatedEvent.members.map((member) => member.user.id);
       setSelectedMemberIds(memberIds);
-    } catch (e) {
-      // Se der erro, não faz nada
+      if (updatedEvent.comments) {
+        setComments(updatedEvent.comments);
+      } else {
+        const fetchedComments = await apiService.getComments(eventId);
+        setComments(fetchedComments);
+      }
+    } catch {
+      // ignore
     }
   }, [eventId]);
 
-  // Buscar usuários quando o modal abrir
   React.useEffect(() => {
-    if (open) {
+    if (open && eventId) {
       fetchUsers();
-      // Recarregar evento quando modal abrir
-      if (eventId) {
-        reloadEvent();
-      }
+      reloadEvent();
     }
   }, [open, eventId, reloadEvent]);
 
-  // Função para buscar usuários
   const fetchUsers = async () => {
     setIsLoadingUsers(true);
     try {
-      console.log('🚀 Buscando usuários para edição...');
       const usersData = await apiService.getAllUsers();
-      console.log('✅ Usuários carregados:', usersData);
       setUsers(usersData);
     } catch (error) {
-      console.error('❌ Erro ao buscar usuários:', error);
+      console.error('Erro ao buscar usuários:', error);
     } finally {
       setIsLoadingUsers(false);
     }
   };
 
-  // Inicializar dados de edição quando o evento mudar
   React.useEffect(() => {
     if (event) {
       setEditData({
         title: event.title,
         description: event.description,
-        eventType: event.eventType,
+        tags: event.tags || [],
         date: event.date,
       });
-      // Inicializar membros selecionados
       const memberIds = event.members.map(member => member.user.id);
       setSelectedMemberIds(memberIds);
     }
   }, [event]);
 
   const isOrganizer = event && user?.id === event.organizer.id;
-
-  const getEventIcon = (eventType: string) => {
-    switch (eventType) {
-      case 'PROVA':
-        return <QuizIcon />;
-      case 'TRABALHO':
-        return <AssignmentIcon />;
-      case 'FESTA':
-        return <CelebrationIcon />;
-      case 'REUNIAO':
-        return <GroupIcon />;
-      case 'OUTRO':
-        return <EventIcon />;
-      default:
-        return <EventIcon />;
-    }
-  };
-
-  const getEventTypeLabel = (eventType: string) => {
-    switch (eventType) {
-      case 'PROVA':
-        return 'Prova';
-      case 'TRABALHO':
-        return 'Trabalho';
-      case 'FESTA':
-        return 'Festa';
-      case 'REUNIAO':
-        return 'Reunião';
-      case 'OUTRO':
-        return 'Outro';
-      default:
-        return eventType;
-    }
-  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -196,15 +157,13 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setIsEditing(false);
     setError(null);
     setSuccess(null);
-    // Restaurar dados originais
     if (event) {
       setEditData({
         title: event.title,
         description: event.description,
-        eventType: event.eventType,
+        tags: event.tags || [],
         date: event.date,
       });
-      // Restaurar membros originais
       const memberIds = event.members.map(member => member.user.id);
       setSelectedMemberIds(memberIds);
     }
@@ -218,48 +177,35 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     setSuccess(null);
 
     try {
-      // Primeiro, atualizar dados básicos do evento
       await apiService.updateEvent(event.id, editData);
       
-      // Depois, atualizar membros
       const currentMemberIds = event.members.map(member => member.user.id);
       const newMemberIds = selectedMemberIds;
       
-      // Remover membros que não estão mais selecionados
       const membersToRemove = currentMemberIds.filter(id => !newMemberIds.includes(id));
       for (const memberId of membersToRemove) {
         await apiService.removeEventMember(event.id, memberId);
       }
       
-      // Adicionar novos membros
       const membersToAdd = newMemberIds.filter(id => !currentMemberIds.includes(id));
       for (const memberId of membersToAdd) {
         await apiService.addEventMember(event.id, memberId);
       }
       
-      // SÓ APÓS TODAS AS OPERAÇÕES TEREM SUCESSO, atualizar o estado local
-      // Recarregar os dados do evento do backend para garantir sincronização
       await reloadEvent();
-      
-      // Notificar componente pai, se necessário
-      if (onEventUpdated) onEventUpdated();
-
+      onEventUpdated?.();
       setSuccess('Evento atualizado com sucesso!');
       setIsEditing(false);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar evento';
       setError(errorMessage);
-      // Em caso de erro, NÃO atualizar o estado local
     } finally {
       setIsLoading(false);
     }
   };
 
-
-
   const handleDelete = async () => {
     if (!event) return;
-
     if (!window.confirm('Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita.')) {
       return;
     }
@@ -269,7 +215,6 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
     try {
       await apiService.deleteEvent(event.id);
-      setSuccess('Evento excluído com sucesso!');
       onEventDeleted?.();
       onClose();
     } catch (error: unknown) {
@@ -280,22 +225,45 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
     }
   };
 
+  const handleAddComment = async () => {
+    if (!event || !newComment.trim()) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const comment = await apiService.addComment(event.id, { content: newComment.trim() });
+      setComments(prev => [...prev, comment]);
+      setNewComment('');
+    } catch {
+      setError('Erro ao adicionar comentário');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!event) return;
+    try {
+      await apiService.deleteComment(event.id, commentId);
+      setComments(prev => prev.filter(c => c.id !== commentId));
+    } catch {
+      setError('Erro ao excluir comentário');
+    }
+  };
+
   const handleClose = () => {
     setIsEditing(false);
     setError(null);
     setSuccess(null);
+    setNewComment('');
     onClose();
   };
 
-  // Função para gerenciar mudanças nos membros selecionados
-  const handleMemberChange = (event: React.SyntheticEvent, newValue: User[]) => {
-    const memberIds = newValue.map(user => user.id);
-    setSelectedMemberIds(memberIds);
+  const handleMemberChange = (_event: React.SyntheticEvent, newValue: UserSummary[]) => {
+    setSelectedMemberIds(newValue.map(u => u.id));
   };
 
-  // Função para obter usuários selecionados
   const getSelectedUsers = () => {
-    return users.filter(user => selectedMemberIds.includes(user.id));
+    return users.filter(u => selectedMemberIds.includes(u.id));
   };
 
   if (!open) return null;
@@ -318,7 +286,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
         <DialogTitle>Erro ao carregar evento</DialogTitle>
         <DialogContent>
-          <Alert severity="error">{errorEvent ? String(errorEvent) : 'Evento não encontrado.'}</Alert>
+          <Alert severity="error">{errorEvent ? String(errorEvent) : 'Evento não encontrado ou sem permissão.'}</Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>Fechar</Button>
@@ -328,23 +296,12 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      maxWidth="md"
-      fullWidth
-      PaperProps={{
-        sx: { borderRadius: 2 },
-      }}
-    >
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {getEventIcon(event.eventType)}
-            <Typography variant="h6">
-              {isEditing ? 'Editar Evento' : event.title}
-            </Typography>
-          </Box>
+          <Typography variant="h6">
+            {isEditing ? 'Editar Evento' : event.title}
+          </Typography>
           <IconButton onClick={handleClose} disabled={isLoading}>
             <CloseIcon />
           </IconButton>
@@ -352,131 +309,112 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Título */}
           {isEditing ? (
             <TextField
               label="Título do Evento"
               value={editData.title}
               onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-              fullWidth
-              required
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
+              fullWidth required variant="outlined"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
           ) : (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Título
-              </Typography>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Título</Typography>
               <Typography variant="h6">{event.title}</Typography>
             </Box>
           )}
 
-          {/* Descrição */}
           {isEditing ? (
             <TextField
               label="Descrição"
               value={editData.description}
               onChange={(e) => setEditData(prev => ({ ...prev, description: e.target.value }))}
-              fullWidth
-              required
-              multiline
-              rows={4}
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
+              fullWidth required multiline rows={4} variant="outlined"
+              sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             />
           ) : (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Descrição
-              </Typography>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Descrição</Typography>
               <Typography variant="body1">{event.description}</Typography>
             </Box>
           )}
 
-          {/* Tipo de Evento */}
           {isEditing ? (
-            <FormControl fullWidth variant="outlined">
-              <InputLabel>Tipo de Evento</InputLabel>
-              <Select
-                value={editData.eventType}
-                onChange={(e) => setEditData(prev => ({ ...prev, eventType: e.target.value as 'PROVA' | 'TRABALHO' | 'FESTA' | 'REUNIAO' | 'OUTRO' }))}
-                label="Tipo de Evento"
-                sx={{
-                  borderRadius: 2,
-                }}
-              >
-                <MenuItem value="PROVA">Prova</MenuItem>
-                <MenuItem value="TRABALHO">Trabalho</MenuItem>
-                <MenuItem value="FESTA">Festa</MenuItem>
-                <MenuItem value="REUNIAO">Reunião</MenuItem>
-                <MenuItem value="OUTRO">Outro</MenuItem>
-              </Select>
-            </FormControl>
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              value={editData.tags}
+              onChange={(_event, newValue) => {
+                setEditData(prev => ({
+                  ...prev,
+                  tags: newValue.map(v => (typeof v === 'string' ? v.trim() : v)).filter(Boolean) as string[],
+                }));
+              }}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const colors = getTagColor(option);
+                  return (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={option}
+                      label={option}
+                      size="small"
+                      sx={{ backgroundColor: colors.bg, color: colors.text }}
+                    />
+                  );
+                })
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Tags" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
+              )}
+            />
           ) : (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Tipo do Evento
-              </Typography>
-              <Chip
-                icon={getEventIcon(event.eventType)}
-                label={getEventTypeLabel(event.eventType)}
-                size="small"
-                variant="outlined"
-              />
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Tags</Typography>
+              {event.tags && event.tags.length > 0 ? (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {event.tags.map((tag) => {
+                    const colors = getTagColor(tag);
+                    return (
+                      <Chip
+                        key={tag}
+                        label={tag}
+                        size="small"
+                        sx={{ backgroundColor: colors.bg, color: colors.text }}
+                      />
+                    );
+                  })}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">Nenhuma tag</Typography>
+              )}
             </Box>
           )}
 
-          {/* Data do Evento */}
           {isEditing ? (
             <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ptBR}>
               <DateTimePicker
                 label="Data e Hora do Evento"
                 value={new Date(editData.date)}
                 onChange={(date) => {
-                  if (date) {
-                    setEditData(prev => ({ ...prev, date: date.toISOString() }));
-                  }
+                  if (date) setEditData(prev => ({ ...prev, date: date.toISOString() }));
                 }}
                 slotProps={{
                   textField: {
-                    fullWidth: true,
-                    variant: 'outlined',
-                    sx: {
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
-                      },
-                    },
+                    fullWidth: true, variant: 'outlined',
+                    sx: { '& .MuiOutlinedInput-root': { borderRadius: 2 } },
                   },
                 }}
               />
             </LocalizationProvider>
           ) : (
             <Box>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Data do Evento
-              </Typography>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Data do Evento</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarIcon color="action" />
                 <Typography variant="body1">
@@ -486,7 +424,6 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
             </Box>
           )}
 
-          {/* Seleção de Membros (apenas na edição) */}
           {isEditing && (
             <Autocomplete
               multiple
@@ -495,36 +432,12 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
               value={getSelectedUsers()}
               onChange={handleMemberChange}
               loading={isLoadingUsers}
-              filterOptions={(options, { inputValue }) => {
-                const searchTerm = inputValue.toLowerCase();
-                return options.filter(
-                  (option) =>
-                    option.username.toLowerCase().includes(searchTerm) ||
-                    option.email.toLowerCase().includes(searchTerm)
-                );
-              }}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Participantes"
-                  placeholder="Selecione os participantes..."
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
+                <TextField {...params} label="Participantes" variant="outlined" sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }} />
               )}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => (
-                  <Chip
-                    {...getTagProps({ index })}
-                    key={option.id}
-                    label={`${option.username} (${option.email})`}
-                    size="small"
-                    variant="outlined"
-                  />
+                  <Chip {...getTagProps({ index })} key={option.id} label={option.username} size="small" variant="outlined" />
                 ))
               }
             />
@@ -532,18 +445,14 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
           <Divider />
 
-          {/* Organizador */}
           <Box>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-              Organizador
-            </Typography>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>Organizador</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PersonIcon color="action" />
               <Typography variant="body1">{event.organizer.username}</Typography>
             </Box>
           </Box>
 
-          {/* Membros */}
           <Box>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
               Participantes ({event.members.length})
@@ -553,7 +462,7 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 {event.members.map((member) => (
                   <Chip
                     key={member.id}
-                    label={member.user && member.user.username ? member.user.username : 'Participante'}
+                    label={member.user?.username || 'Participante'}
                     size="small"
                     variant="outlined"
                     icon={<PersonIcon />}
@@ -561,10 +470,64 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
                 ))}
               </Box>
             ) : (
-              <Typography variant="body2" color="text.secondary">
-                Nenhum participante ainda.
-              </Typography>
+              <Typography variant="body2" color="text.secondary">Nenhum participante ainda.</Typography>
             )}
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+              Comentários ({comments.length})
+            </Typography>
+            <List dense>
+              {comments.map((comment) => (
+                <ListItem key={comment.id} alignItems="flex-start" sx={{ px: 0 }}>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle2">{comment.author.username}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {format(parseISO(comment.createdAt), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                        </Typography>
+                      </Box>
+                    }
+                    secondary={comment.content}
+                  />
+                  {user?.id === comment.author.id && (
+                    <ListItemSecondaryAction>
+                      <IconButton edge="end" size="small" onClick={() => handleDeleteComment(comment.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  )}
+                </ListItem>
+              ))}
+            </List>
+            <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Adicionar comentário..."
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddComment();
+                  }
+                }}
+                variant="outlined"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+              />
+              <IconButton
+                color="primary"
+                onClick={handleAddComment}
+                disabled={isSubmittingComment || !newComment.trim()}
+              >
+                {isSubmittingComment ? <CircularProgress size={20} /> : <SendIcon />}
+              </IconButton>
+            </Box>
           </Box>
         </Box>
       </DialogContent>
@@ -572,23 +535,10 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
       <DialogActions sx={{ p: 3, pt: 1 }}>
         {isOrganizer && !isEditing && (
           <>
-            <Button
-              onClick={handleEdit}
-              variant="outlined"
-              startIcon={<EditIcon />}
-              disabled={isLoading}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
+            <Button onClick={handleEdit} variant="outlined" startIcon={<EditIcon />} disabled={isLoading} sx={{ borderRadius: 2, px: 3 }}>
               Editar
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              disabled={isLoading}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
+            <Button onClick={handleDelete} variant="outlined" color="error" startIcon={<DeleteIcon />} disabled={isLoading} sx={{ borderRadius: 2, px: 3 }}>
               Excluir
             </Button>
           </>
@@ -596,33 +546,17 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
 
         {isEditing && (
           <>
-            <Button
-              onClick={handleCancelEdit}
-              variant="outlined"
-              startIcon={<CancelIcon />}
-              disabled={isLoading}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
+            <Button onClick={handleCancelEdit} variant="outlined" startIcon={<CancelIcon />} disabled={isLoading} sx={{ borderRadius: 2, px: 3 }}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleSave}
-              variant="contained"
-              startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />}
-              disabled={isLoading}
-              sx={{ borderRadius: 2, px: 3 }}
-            >
+            <Button onClick={handleSave} variant="contained" startIcon={isLoading ? <CircularProgress size={20} /> : <SaveIcon />} disabled={isLoading} sx={{ borderRadius: 2, px: 3 }}>
               {isLoading ? 'Salvando...' : 'Salvar'}
             </Button>
           </>
         )}
 
         {!isEditing && (
-          <Button
-            onClick={handleClose}
-            variant="contained"
-            sx={{ borderRadius: 2, px: 3 }}
-          >
+          <Button onClick={handleClose} variant="contained" sx={{ borderRadius: 2, px: 3 }}>
             Fechar
           </Button>
         )}
@@ -631,4 +565,4 @@ const EventDetailsModal: React.FC<EventDetailsModalProps> = ({
   );
 };
 
-export default EventDetailsModal; 
+export default EventDetailsModal;

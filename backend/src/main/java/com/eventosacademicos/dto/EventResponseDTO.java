@@ -1,28 +1,32 @@
 package com.eventosacademicos.dto;
 
-import com.eventosacademicos.model.EventType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 public class EventResponseDTO {
     private Long id;
     private String title;
     private String description;
-    private EventType eventType;
+    private Set<String> tags;
     private LocalDateTime date;
     private EventMemberDTO.UserSummaryDTO organizer;
     private List<EventMemberDTO> members;
+    private List<CommentDTO> comments;
 
     public EventResponseDTO() {}
 
-    public EventResponseDTO(Long id, String title, String description, EventType eventType, LocalDateTime date, EventMemberDTO.UserSummaryDTO organizer, List<EventMemberDTO> members) {
+    public EventResponseDTO(Long id, String title, String description, Set<String> tags,
+                            LocalDateTime date, EventMemberDTO.UserSummaryDTO organizer,
+                            List<EventMemberDTO> members, List<CommentDTO> comments) {
         this.id = id;
         this.title = title;
         this.description = description;
-        this.eventType = eventType;
+        this.tags = tags;
         this.date = date;
         this.organizer = organizer;
         this.members = members;
+        this.comments = comments;
     }
 
     public Long getId() { return id; }
@@ -31,12 +35,14 @@ public class EventResponseDTO {
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public EventType getEventType() { return eventType; }
-    public void setEventType(EventType eventType) { this.eventType = eventType; }
+    public Set<String> getTags() { return tags; }
+    public void setTags(Set<String> tags) { this.tags = tags; }
     public LocalDateTime getDate() { return date; }
     public void setDate(LocalDateTime date) { this.date = date; }
     public EventMemberDTO.UserSummaryDTO getOrganizer() { return organizer; }
     public void setOrganizer(EventMemberDTO.UserSummaryDTO organizer) { this.organizer = organizer; }
     public List<EventMemberDTO> getMembers() { return members; }
     public void setMembers(List<EventMemberDTO> members) { this.members = members; }
-} 
+    public List<CommentDTO> getComments() { return comments; }
+    public void setComments(List<CommentDTO> comments) { this.comments = comments; }
+}

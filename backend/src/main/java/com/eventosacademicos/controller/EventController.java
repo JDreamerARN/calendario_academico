@@ -1,10 +1,11 @@
 package com.eventosacademicos.controller;
 
+import com.eventosacademicos.dto.CommentDTO;
+import com.eventosacademicos.dto.CommentRequest;
 import com.eventosacademicos.dto.EventRequest;
 import com.eventosacademicos.dto.EventResponseDTO;
 import com.eventosacademicos.model.Event;
 import com.eventosacademicos.model.EventMember;
-import com.eventosacademicos.model.EventType;
 import com.eventosacademicos.model.User;
 import com.eventosacademicos.service.EventService;
 import com.eventosacademicos.service.UserService;
@@ -17,7 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -34,30 +35,34 @@ public class EventController {
     @Autowired
     private UserService userService;
     
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return userService.getUserByUsername(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    }
+    
     @PostMapping
     public ResponseEntity<Event> createEvent(@Valid @RequestBody EventRequest eventRequest) {
         try {
             logger.info("Recebendo requisição para criar evento: {}", eventRequest);
-            // Obter usuário atual
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getUserByUsername(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            User currentUser = getCurrentUser();
             
-            // Criar evento
             Event event = new Event(
                 eventRequest.getTitle(),
                 eventRequest.getDescription(),
-                eventRequest.getEventType(),
                 eventRequest.getDate(),
                 currentUser
             );
             
+            if (eventRequest.getTags() != null) {
+                event.setTags(new HashSet<>(eventRequest.getTags()));
+            }
+            
             Event createdEvent = eventService.createEvent(event);
             
-            // Adicionar membros se especificados
             if (eventRequest.getMemberIds() != null && !eventRequest.getMemberIds().isEmpty()) {
                 for (Long memberId : eventRequest.getMemberIds()) {
-                    eventService.addMemberToEvent(createdEvent.getId(), memberId);
+                    eventService.addMemberToEvent(createdEvent.getId(), memberId, currentUser);
                 }
             }
             
@@ -70,55 +75,35 @@ public class EventController {
     }
     
     @GetMapping
-    public ResponseEntity<List<Event>> getEvents() {
+    public ResponseEntity<List<EventResponseDTO>> getEvents() {
         try {
-            // Obter usuário atual
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getUserByUsername(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-            
-            List<Event> events = eventService.getEventsForUser(currentUser);
+            User currentUser = getCurrentUser();
+            List<EventResponseDTO> events = eventService.getEventsForUser(currentUser).stream()
+                    .map(EventService::toEventResponseDTO)
+                    .toList();
             return ResponseEntity.ok(events);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
         }
     }
     
-    @GetMapping("/all")
-    public ResponseEntity<List<Event>> getAllEvents() {
-        List<Event> events = eventService.getAllEvents();
-        return ResponseEntity.ok(events);
-    }
-    
     @GetMapping("/{id}")
     public ResponseEntity<EventResponseDTO> getEventById(@PathVariable Long id) {
-        return eventService.getEventById(id)
-                .map(event -> ResponseEntity.ok(EventService.toEventResponseDTO(event)))
-                .orElse(ResponseEntity.notFound().build());
-    }
-    
-    @GetMapping("/type/{eventType}")
-    public ResponseEntity<List<Event>> getEventsByType(@PathVariable EventType eventType) {
-        List<Event> events = eventService.getEventsByType(eventType);
-        return ResponseEntity.ok(events);
-    }
-    
-    @GetMapping("/academic")
-    public ResponseEntity<List<Event>> getAcademicEvents() {
-        List<Event> events = eventService.getAcademicEvents();
-        return ResponseEntity.ok(events);
-    }
-    
-    @GetMapping("/party")
-    public ResponseEntity<List<Event>> getPartyEvents() {
-        List<Event> events = eventService.getPartyEvents();
-        return ResponseEntity.ok(events);
+        try {
+            User currentUser = getCurrentUser();
+            return eventService.getEventById(id, currentUser)
+                    .map(event -> ResponseEntity.ok(EventService.toEventResponseDTO(event)))
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
     
     @GetMapping("/{id}/members")
     public ResponseEntity<Set<EventMember>> getEventMembers(@PathVariable Long id) {
         try {
-            Set<EventMember> members = eventService.getEventMembers(id);
+            User currentUser = getCurrentUser();
+            Set<EventMember> members = eventService.getEventMembers(id, currentUser);
             return ResponseEntity.ok(members);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -128,17 +113,15 @@ public class EventController {
     @PutMapping("/{id}")
     public ResponseEntity<Event> updateEvent(@PathVariable Long id, @Valid @RequestBody EventRequest eventRequest) {
         try {
-            // Obter usuário atual
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getUserByUsername(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            User currentUser = getCurrentUser();
             
-            // Criar objeto Event com os dados da requisição
             Event eventDetails = new Event();
             eventDetails.setTitle(eventRequest.getTitle());
             eventDetails.setDescription(eventRequest.getDescription());
-            eventDetails.setEventType(eventRequest.getEventType());
             eventDetails.setDate(eventRequest.getDate());
+            if (eventRequest.getTags() != null) {
+                eventDetails.setTags(new HashSet<>(eventRequest.getTags()));
+            }
             
             Event updatedEvent = eventService.updateEvent(id, eventDetails, currentUser);
             return ResponseEntity.ok(updatedEvent);
@@ -150,11 +133,7 @@ public class EventController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEvent(@PathVariable Long id) {
         try {
-            // Obter usuário atual
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            User currentUser = userService.getUserByUsername(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
-            
+            User currentUser = getCurrentUser();
             eventService.deleteEvent(id, currentUser);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
@@ -165,7 +144,8 @@ public class EventController {
     @PostMapping("/{eventId}/members/{userId}")
     public ResponseEntity<Event> addMemberToEvent(@PathVariable Long eventId, @PathVariable Long userId) {
         try {
-            Event event = eventService.addMemberToEvent(eventId, userId);
+            User currentUser = getCurrentUser();
+            Event event = eventService.addMemberToEvent(eventId, userId, currentUser);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().build();
@@ -174,16 +154,45 @@ public class EventController {
     
     @DeleteMapping("/{eventId}/members/{userId}")
     public ResponseEntity<?> removeMemberFromEvent(@PathVariable Long eventId, @PathVariable Long userId) {
-        System.out.println("[CONTROLLER] Requisição para remover membro: eventId=" + eventId + ", userId=" + userId);
         try {
-            System.out.println("[CONTROLLER] Chamando service.removeMemberFromEvent...");
-            eventService.removeMemberFromEvent(eventId, userId);
-            System.out.println("[CONTROLLER] Membro removido com sucesso!");
+            User currentUser = getCurrentUser();
+            eventService.removeMemberFromEvent(eventId, userId, currentUser);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            System.out.println("[CONTROLLER] Erro ao remover membro: " + e.getMessage());
-            e.printStackTrace();
             return ResponseEntity.badRequest().body("Erro ao remover membro: " + e.getMessage());
         }
     }
-} 
+    
+    @GetMapping("/{id}/comments")
+    public ResponseEntity<List<CommentDTO>> getComments(@PathVariable Long id) {
+        try {
+            User currentUser = getCurrentUser();
+            List<CommentDTO> comments = eventService.getComments(id, currentUser);
+            return ResponseEntity.ok(comments);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @PostMapping("/{id}/comments")
+    public ResponseEntity<CommentDTO> addComment(@PathVariable Long id, @Valid @RequestBody CommentRequest commentRequest) {
+        try {
+            User currentUser = getCurrentUser();
+            CommentDTO comment = eventService.addComment(id, commentRequest.getContent(), currentUser);
+            return ResponseEntity.ok(comment);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @DeleteMapping("/{id}/comments/{commentId}")
+    public ResponseEntity<?> deleteComment(@PathVariable Long id, @PathVariable Long commentId) {
+        try {
+            User currentUser = getCurrentUser();
+            eventService.deleteComment(id, commentId, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+}

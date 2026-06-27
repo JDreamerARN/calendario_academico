@@ -85,9 +85,6 @@ const CalendarPage: React.FC = () => {
 
   const menuItems = [
     { text: 'Calendário', icon: <CalendarIcon />, action: () => { setDrawerOpen(false); navigate('/calendar'); } },
-    ...(user?.userType === 'ADMINISTRADOR' ? [
-      { text: 'Usuários', icon: <PersonIcon />, action: () => { setDrawerOpen(false); navigate('/users'); } },
-    ] : []),
     { text: 'Perfil', icon: <PersonIcon />, action: () => { setDrawerOpen(false); navigate('/profile'); } },
   ];
 
@@ -149,7 +146,7 @@ const CalendarPage: React.FC = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Calendário Acadêmico
+            Calendário de Eventos
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Typography variant="body2" sx={{ display: { xs: 'none', sm: 'block' } }}>

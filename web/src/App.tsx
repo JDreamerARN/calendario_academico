@@ -11,7 +11,6 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import CalendarPage from './pages/CalendarPage';
 import Profile from './pages/Profile';
-import UserListPage from './pages/UserListPage';
 
 // Criar cliente do React Query
 const queryClient = new QueryClient({
@@ -105,14 +104,6 @@ function App() {
                 element={
                   <PrivateRoute>
                     <Profile />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/users"
-                element={
-                  <PrivateRoute>
-                    <UserListPage />
                   </PrivateRoute>
                 }
               />

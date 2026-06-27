@@ -36,17 +36,6 @@ public class User {
     @Column(nullable = false)
     private String password;
     
-    @NotBlank(message = "Número de matrícula é obrigatório")
-    @Column(unique = true, nullable = false)
-    private String registrationNumber;
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserType userType;
-    
-    @Column(nullable = false)
-    private boolean approved = false;
-    
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Set<EventMember> eventMemberships = new HashSet<>();
@@ -55,20 +44,15 @@ public class User {
     @JsonManagedReference
     private Set<Event> createdEvents = new HashSet<>();
     
-    // Construtores
     public User() {}
     
-    public User(String username, String email, String phone, String password, 
-                String registrationNumber, UserType userType) {
+    public User(String username, String email, String phone, String password) {
         this.username = username;
         this.email = email;
         this.phone = phone;
         this.password = password;
-        this.registrationNumber = registrationNumber;
-        this.userType = userType;
     }
     
-    // Getters e Setters
     public Long getId() {
         return id;
     }
@@ -109,30 +93,6 @@ public class User {
         this.password = password;
     }
     
-    public String getRegistrationNumber() {
-        return registrationNumber;
-    }
-    
-    public void setRegistrationNumber(String registrationNumber) {
-        this.registrationNumber = registrationNumber;
-    }
-    
-    public UserType getUserType() {
-        return userType;
-    }
-    
-    public void setUserType(UserType userType) {
-        this.userType = userType;
-    }
-    
-    public boolean isApproved() {
-        return approved;
-    }
-    
-    public void setApproved(boolean approved) {
-        this.approved = approved;
-    }
-    
     public Set<EventMember> getEventMemberships() {
         return eventMemberships;
     }
@@ -148,4 +108,4 @@ public class User {
     public void setCreatedEvents(Set<Event> createdEvents) {
         this.createdEvents = createdEvents;
     }
-} 
+}

@@ -7,7 +7,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -25,9 +27,10 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private EventType eventType;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "event_tags", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new HashSet<>();
     
     @NotNull(message = "Data é obrigatória")
     @Column(nullable = false)
@@ -42,18 +45,20 @@ public class Event {
     @JsonManagedReference
     private Set<EventMember> members = new HashSet<>();
     
-    // Construtores
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    @OrderBy("createdAt ASC")
+    private List<Comment> comments = new ArrayList<>();
+    
     public Event() {}
     
-    public Event(String title, String description, EventType eventType, LocalDateTime date, User createdBy) {
+    public Event(String title, String description, LocalDateTime date, User createdBy) {
         this.title = title;
         this.description = description;
-        this.eventType = eventType;
         this.date = date;
         this.createdBy = createdBy;
     }
     
-    // Getters e Setters
     public Long getId() {
         return id;
     }
@@ -78,12 +83,12 @@ public class Event {
         this.description = description;
     }
     
-    public EventType getEventType() {
-        return eventType;
+    public Set<String> getTags() {
+        return tags;
     }
     
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
+    public void setTags(Set<String> tags) {
+        this.tags = tags;
     }
     
     public LocalDateTime getDate() {
@@ -109,4 +114,12 @@ public class Event {
     public void setMembers(Set<EventMember> members) {
         this.members = members;
     }
-} 
+    
+    public List<Comment> getComments() {
+        return comments;
+    }
+    
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+}
