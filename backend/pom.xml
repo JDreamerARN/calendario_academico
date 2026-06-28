@@ -8,11 +8,11 @@
         <version>3.2.0</version>
         <relativePath/>
     </parent>
-    <groupId>com.eventosacademicos</groupId>
-    <artifactId>eventos-academicos-backend</artifactId>
+    <groupId>com.calendario</groupId>
+    <artifactId>calendario-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>eventos-academicos-backend</name>
-    <description>Backend para Sistema de Gestão de Eventos Acadêmicos</description>
+    <name>calendario-backend</name>
+    <description>Backend do Calendário de Eventos</description>
     <properties>
         <java.version>17</java.version>
     </properties>

@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: eventos_academicos
+      MYSQL_DATABASE: calendario
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
@@ -22,7 +22,7 @@ services:
     build:
       context: ./backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/eventos_academicos?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/calendario?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root123
       SPRING_DEVTOOLS_RESTART_ENABLED: "true"
