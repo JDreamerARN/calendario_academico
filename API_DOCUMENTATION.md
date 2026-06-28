@@ -1,8 +1,10 @@
-# Documentação da API - Sistema de Eventos Acadêmicos
+# Documentação da API - Calendário de Eventos
 
 ## Visão Geral
 
-Esta documentação descreve todas as rotas da API do sistema de eventos acadêmicos, incluindo autenticação, gerenciamento de usuários, eventos e utilitários.
+Esta documentação descreve todas as rotas da API do calendário de eventos, incluindo autenticação, gerenciamento de usuários, eventos, comentários e utilitários.
+
+O sistema é um calendário compartilhado de uso geral: qualquer pessoa pode criar uma conta, criar eventos, convidar outros usuários como participantes, organizar os eventos com tags livres e uma cor, e trocar comentários. Cada usuário enxerga apenas os eventos dos quais é criador ou participante.
 
 ## Base URL
 
@@ -13,6 +15,8 @@ http://localhost:8080/api
 ## Autenticação
 
 A API utiliza JWT (JSON Web Token) para autenticação. A maioria das rotas requer um token válido no header `Authorization: Bearer <token>`.
+
+Não há papéis de usuário nem fluxo de aprovação: ao se registrar, o usuário já pode fazer login imediatamente.
 
 ---
 
@@ -35,8 +39,9 @@ Autentica um usuário e retorna um token JWT.
 ```json
 {
   "token": "jwt_token_here",
+  "id": 1,
   "username": "string",
-  "userType": "ALUNO|PROFESSOR|ADMINISTRADOR"
+  "message": null
 }
 ```
 
@@ -50,7 +55,7 @@ Autentica um usuário e retorna um token JWT.
 ### 1.2 Registro
 **POST** `/api/auth/register`
 
-Registra um novo usuário no sistema.
+Registra um novo usuário. O usuário já pode fazer login logo em seguida.
 
 **Body:**
 ```json
@@ -58,16 +63,14 @@ Registra um novo usuário no sistema.
   "username": "string",
   "email": "string",
   "phone": "string",
-  "password": "string",
-  "registrationNumber": "string",
-  "userType": "ALUNO|PROFESSOR|ADMINISTRADOR"
+  "password": "string"
 }
 ```
 
 **Resposta de Sucesso (200):**
 ```json
 {
-  "message": "Usuário registrado com sucesso. Aguarde aprovação do administrador."
+  "message": "Usuário registrado com sucesso. Você já pode fazer login."
 }
 ```
 
@@ -90,37 +93,12 @@ Testa se a API de autenticação está funcionando.
 
 ---
 
-## 2. Gerenciamento de Usuários (`/api/users`)
+## 2. Usuários (`/api/users`)
 
-### 2.1 Listar Todos os Usuários
-**GET** `/api/users`
-
-Lista todos os usuários do sistema.
-
-**Permissão:** ADMINISTRADOR
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "username": "string",
-    "email": "string",
-    "phone": "string",
-    "registrationNumber": "string",
-    "userType": "ALUNO|PROFESSOR|ADMINISTRADOR",
-    "approved": true,
-    "createdAt": "2024-01-01T00:00:00"
-  }
-]
-```
-
-### 2.2 Buscar Usuário por ID
+### 2.1 Buscar Usuário por ID
 **GET** `/api/users/{id}`
 
-Busca um usuário específico por ID.
-
-**Permissão:** ADMINISTRADOR ou próprio usuário
+Busca os dados de um usuário. Permitido apenas para o próprio usuário autenticado.
 
 **Parâmetros:**
 - `id` (path): ID do usuário
@@ -131,97 +109,16 @@ Busca um usuário específico por ID.
   "id": 1,
   "username": "string",
   "email": "string",
-  "phone": "string",
-  "registrationNumber": "string",
-  "userType": "ALUNO|PROFESSOR|ADMINISTRADOR",
-  "approved": true,
-  "createdAt": "2024-01-01T00:00:00"
+  "phone": "string"
 }
 ```
 
 **Resposta de Erro (404):** Usuário não encontrado
 
-### 2.3 Buscar Usuários por Tipo
-**GET** `/api/users/type/{userType}`
-
-Lista usuários por tipo específico.
-
-**Permissão:** ADMINISTRADOR
-
-**Parâmetros:**
-- `userType` (path): ALUNO, PROFESSOR ou ADMINISTRADOR
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "username": "string",
-    "email": "string",
-    "phone": "string",
-    "registrationNumber": "string",
-    "userType": "ALUNO",
-    "approved": true,
-    "createdAt": "2024-01-01T00:00:00"
-  }
-]
-```
-
-### 2.4 Listar Usuários Pendentes
-**GET** `/api/users/pending`
-
-Lista usuários que aguardam aprovação.
-
-**Permissão:** ADMINISTRADOR
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "username": "string",
-    "email": "string",
-    "phone": "string",
-    "registrationNumber": "string",
-    "userType": "ALUNO",
-    "approved": false,
-    "createdAt": "2024-01-01T00:00:00"
-  }
-]
-```
-
-### 2.5 Aprovar Usuário
-**PUT** `/api/users/{id}/approve`
-
-Aprova um usuário pendente.
-
-**Permissão:** ADMINISTRADOR
-
-**Parâmetros:**
-- `id` (path): ID do usuário
-
-**Resposta de Sucesso (200):**
-```json
-{
-  "id": 1,
-  "username": "string",
-  "email": "string",
-  "phone": "string",
-  "registrationNumber": "string",
-  "userType": "ALUNO",
-  "approved": true,
-  "createdAt": "2024-01-01T00:00:00"
-}
-```
-
-**Resposta de Erro (400):** Erro ao aprovar usuário
-
-### 2.6 Atualizar Usuário
+### 2.2 Atualizar Usuário
 **PUT** `/api/users/{id}`
 
-Atualiza dados de um usuário.
-
-**Permissão:** ADMINISTRADOR ou próprio usuário
+Atualiza os dados do próprio usuário (email, telefone e senha).
 
 **Parâmetros:**
 - `id` (path): ID do usuário
@@ -229,11 +126,9 @@ Atualiza dados de um usuário.
 **Body:**
 ```json
 {
-  "username": "string",
   "email": "string",
   "phone": "string",
-  "registrationNumber": "string",
-  "userType": "ALUNO|PROFESSOR|ADMINISTRADOR"
+  "password": "string"
 }
 ```
 
@@ -243,46 +138,47 @@ Atualiza dados de um usuário.
   "id": 1,
   "username": "string",
   "email": "string",
-  "phone": "string",
-  "registrationNumber": "string",
-  "userType": "ALUNO",
-  "approved": true,
-  "createdAt": "2024-01-01T00:00:00"
+  "phone": "string"
 }
 ```
 
 **Resposta de Erro (400):** Erro ao atualizar usuário
 
-### 2.7 Deletar Usuário
-**DELETE** `/api/users/{id}`
+### 2.3 Resumo de Usuários
+**GET** `/api/users/summary`
 
-Remove um usuário do sistema.
+Lista todos os usuários em formato resumido. Usado para selecionar participantes ao criar ou editar um evento.
 
-**Permissão:** ADMINISTRADOR
-
-**Parâmetros:**
-- `id` (path): ID do usuário
-
-**Resposta de Sucesso (200):** Sem conteúdo
-
-**Resposta de Erro (400):** Erro ao deletar usuário
+**Resposta de Sucesso (200):**
+```json
+[
+  {
+    "id": 1,
+    "username": "string",
+    "email": "string"
+  }
+]
+```
 
 ---
 
-## 3. Gerenciamento de Eventos (`/api/events`)
+## 3. Eventos (`/api/events`)
+
+Um usuário só pode visualizar, comentar ou gerenciar membros de um evento se for o criador ou um participante dele. Apenas o criador pode editar ou excluir o evento.
 
 ### 3.1 Criar Evento
 **POST** `/api/events`
 
-Cria um novo evento.
+Cria um novo evento. O usuário autenticado se torna o organizador. As `tags` são livres (texto) e a `color` define a cor do evento no calendário e nos detalhes.
 
 **Body:**
 ```json
 {
   "title": "string",
   "description": "string",
-  "eventType": "ACADEMICO|FESTA",
-  "date": "2024-01-01T10:00:00",
+  "tags": ["reunião", "trabalho"],
+  "color": "#1976d2",
+  "date": "2026-01-01T10:00:00",
   "memberIds": [1, 2, 3]
 }
 ```
@@ -293,13 +189,15 @@ Cria um novo evento.
   "id": 1,
   "title": "string",
   "description": "string",
-  "eventType": "ACADEMICO",
-  "date": "2024-01-01T10:00:00",
+  "tags": ["reunião", "trabalho"],
+  "color": "#1976d2",
+  "date": "2026-01-01T10:00:00",
   "organizer": {
     "id": 1,
     "username": "string"
   },
-  "members": []
+  "members": [],
+  "comments": []
 }
 ```
 
@@ -308,7 +206,7 @@ Cria um novo evento.
 ### 3.2 Listar Eventos do Usuário
 **GET** `/api/events`
 
-Lista eventos relacionados ao usuário autenticado.
+Lista os eventos em que o usuário autenticado é criador ou participante.
 
 **Resposta de Sucesso (200):**
 ```json
@@ -317,46 +215,25 @@ Lista eventos relacionados ao usuário autenticado.
     "id": 1,
     "title": "string",
     "description": "string",
-    "eventType": "ACADEMICO",
-    "date": "2024-01-01T10:00:00",
+    "tags": ["reunião"],
+    "color": "#1976d2",
+    "date": "2026-01-01T10:00:00",
     "organizer": {
       "id": 1,
       "username": "string"
     },
-    "members": []
+    "members": [],
+    "comments": []
   }
 ]
 ```
 
 **Resposta de Erro (400):** Erro ao buscar eventos
 
-### 3.3 Listar Todos os Eventos
-**GET** `/api/events/all`
-
-Lista todos os eventos do sistema.
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "description": "string",
-    "eventType": "ACADEMICO",
-    "date": "2024-01-01T10:00:00",
-    "organizer": {
-      "id": 1,
-      "username": "string"
-    },
-    "members": []
-  }
-]
-```
-
-### 3.4 Buscar Evento por ID
+### 3.3 Buscar Evento por ID
 **GET** `/api/events/{id}`
 
-Busca um evento específico por ID.
+Busca um evento específico. Disponível apenas para o criador ou participantes.
 
 **Parâmetros:**
 - `id` (path): ID do evento
@@ -367,94 +244,24 @@ Busca um evento específico por ID.
   "id": 1,
   "title": "string",
   "description": "string",
-  "eventType": "ACADEMICO",
-  "date": "2024-01-01T10:00:00",
+  "tags": ["reunião"],
+  "color": "#1976d2",
+  "date": "2026-01-01T10:00:00",
   "organizer": {
     "id": 1,
     "username": "string"
   },
-  "members": []
+  "members": [],
+  "comments": []
 }
 ```
 
-**Resposta de Erro (404):** Evento não encontrado
+**Resposta de Erro (404):** Evento não encontrado ou sem permissão
 
-### 3.5 Buscar Eventos por Tipo
-**GET** `/api/events/type/{eventType}`
-
-Lista eventos por tipo específico.
-
-**Parâmetros:**
-- `eventType` (path): ACADEMICO ou FESTA
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "description": "string",
-    "eventType": "ACADEMICO",
-    "date": "2024-01-01T10:00:00",
-    "organizer": {
-      "id": 1,
-      "username": "string"
-    },
-    "members": []
-  }
-]
-```
-
-### 3.6 Listar Eventos Acadêmicos
-**GET** `/api/events/academic`
-
-Lista apenas eventos acadêmicos.
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "description": "string",
-    "eventType": "ACADEMICO",
-    "date": "2024-01-01T10:00:00",
-    "organizer": {
-      "id": 1,
-      "username": "string"
-    },
-    "members": []
-  }
-]
-```
-
-### 3.7 Listar Eventos de Festa
-**GET** `/api/events/party`
-
-Lista apenas eventos de festa.
-
-**Resposta de Sucesso (200):**
-```json
-[
-  {
-    "id": 1,
-    "title": "string",
-    "description": "string",
-    "eventType": "FESTA",
-    "date": "2024-01-01T10:00:00",
-    "organizer": {
-      "id": 1,
-      "username": "string"
-    },
-    "members": []
-  }
-]
-```
-
-### 3.8 Listar Membros do Evento
+### 3.4 Listar Membros do Evento
 **GET** `/api/events/{id}/members`
 
-Lista todos os membros de um evento específico.
+Lista os participantes de um evento.
 
 **Parâmetros:**
 - `id` (path): ID do evento
@@ -467,22 +274,17 @@ Lista todos os membros de um evento específico.
     "user": {
       "id": 1,
       "username": "string"
-    },
-    "event": {
-      "id": 1,
-      "title": "string"
-    },
-    "joinedAt": "2024-01-01T00:00:00"
+    }
   }
 ]
 ```
 
 **Resposta de Erro (404):** Evento não encontrado
 
-### 3.9 Atualizar Evento
+### 3.5 Atualizar Evento
 **PUT** `/api/events/{id}`
 
-Atualiza dados de um evento.
+Atualiza os dados de um evento. Apenas o criador pode editar.
 
 **Parâmetros:**
 - `id` (path): ID do evento
@@ -492,81 +294,45 @@ Atualiza dados de um evento.
 {
   "title": "string",
   "description": "string",
-  "eventType": "ACADEMICO|FESTA",
-  "date": "2024-01-01T10:00:00"
+  "tags": ["reunião", "importante"],
+  "color": "#d32f2f",
+  "date": "2026-01-01T10:00:00"
 }
 ```
 
-**Resposta de Sucesso (200):**
-```json
-{
-  "id": 1,
-  "title": "string",
-  "description": "string",
-  "eventType": "ACADEMICO",
-  "date": "2024-01-01T10:00:00",
-  "organizer": {
-    "id": 1,
-    "username": "string"
-  },
-  "members": []
-}
-```
+**Resposta de Sucesso (200):** Evento atualizado (mesmo formato de [3.3](#33-buscar-evento-por-id))
 
 **Resposta de Erro (400):** Erro ao atualizar evento
 
-### 3.10 Deletar Evento
+### 3.6 Excluir Evento
 **DELETE** `/api/events/{id}`
 
-Remove um evento do sistema.
+Remove um evento. Apenas o criador pode excluir.
 
 **Parâmetros:**
 - `id` (path): ID do evento
 
 **Resposta de Sucesso (200):** Sem conteúdo
 
-**Resposta de Erro (400):** Erro ao deletar evento
+**Resposta de Erro (400):** Erro ao excluir evento
 
-### 3.11 Adicionar Membro ao Evento
+### 3.7 Adicionar Membro ao Evento
 **POST** `/api/events/{eventId}/members/{userId}`
 
-Adiciona um usuário como membro de um evento.
+Adiciona um usuário como participante de um evento.
 
 **Parâmetros:**
 - `eventId` (path): ID do evento
 - `userId` (path): ID do usuário
 
-**Resposta de Sucesso (200):**
-```json
-{
-  "id": 1,
-  "title": "string",
-  "description": "string",
-  "eventType": "ACADEMICO",
-  "date": "2024-01-01T10:00:00",
-  "organizer": {
-    "id": 1,
-    "username": "string"
-  },
-  "members": [
-    {
-      "id": 1,
-      "user": {
-        "id": 2,
-        "username": "string"
-      },
-      "joinedAt": "2024-01-01T00:00:00"
-    }
-  ]
-}
-```
+**Resposta de Sucesso (200):** Evento atualizado (mesmo formato de [3.3](#33-buscar-evento-por-id))
 
 **Resposta de Erro (400):** Erro ao adicionar membro
 
-### 3.12 Remover Membro do Evento
+### 3.8 Remover Membro do Evento
 **DELETE** `/api/events/{eventId}/members/{userId}`
 
-Remove um usuário como membro de um evento.
+Remove um participante de um evento.
 
 **Parâmetros:**
 - `eventId` (path): ID do evento
@@ -578,9 +344,73 @@ Remove um usuário como membro de um evento.
 
 ---
 
-## 4. Utilitários (`/api/util`)
+## 4. Comentários (`/api/events/{id}/comments`)
 
-### 4.1 Gerar Hash de Senha
+Comentários ficam vinculados a um evento. Qualquer participante (ou o criador) pode listar e adicionar comentários. Apenas o autor pode excluir o próprio comentário.
+
+### 4.1 Listar Comentários
+**GET** `/api/events/{id}/comments`
+
+Lista os comentários de um evento, em ordem cronológica.
+
+**Resposta de Sucesso (200):**
+```json
+[
+  {
+    "id": 1,
+    "content": "Confirmado presença!",
+    "author": {
+      "id": 2,
+      "username": "string"
+    },
+    "createdAt": "2026-01-01T12:00:00"
+  }
+]
+```
+
+### 4.2 Adicionar Comentário
+**POST** `/api/events/{id}/comments`
+
+Adiciona um comentário ao evento.
+
+**Body:**
+```json
+{
+  "content": "string"
+}
+```
+
+**Resposta de Sucesso (200):**
+```json
+{
+  "id": 1,
+  "content": "string",
+  "author": {
+    "id": 2,
+    "username": "string"
+  },
+  "createdAt": "2026-01-01T12:00:00"
+}
+```
+
+### 4.3 Excluir Comentário
+**DELETE** `/api/events/{id}/comments/{commentId}`
+
+Remove um comentário. Apenas o autor pode excluir.
+
+**Parâmetros:**
+- `id` (path): ID do evento
+- `commentId` (path): ID do comentário
+
+**Resposta de Sucesso (200):** Sem conteúdo
+
+**Resposta de Erro (400):** Erro ao excluir comentário
+
+---
+
+## 5. Utilitários (`/api/util`)
+
+### 5.1 Gerar Hash de Senha
 **POST** `/api/util/hash`
 
 Gera um hash BCrypt para uma senha fornecida.
@@ -604,31 +434,35 @@ Gera um hash BCrypt para uma senha fornecida.
 ## Códigos de Status HTTP
 
 - **200 OK:** Requisição bem-sucedida
-- **201 Created:** Recurso criado com sucesso
 - **400 Bad Request:** Dados inválidos ou erro na requisição
 - **401 Unauthorized:** Token inválido ou ausente
 - **403 Forbidden:** Permissão insuficiente
 - **404 Not Found:** Recurso não encontrado
 - **500 Internal Server Error:** Erro interno do servidor
 
-## Tipos de Usuário
+## Modelo de Dados
 
-- **ALUNO:** Estudante do sistema
-- **PROFESSOR:** Professor do sistema
-- **ADMINISTRADOR:** Administrador com privilégios especiais
+### Usuário
+- `id`, `username`, `email`, `phone`
 
-## Tipos de Evento
+### Evento
+- `id`, `title`, `description`
+- `tags`: lista de textos livres
+- `color`: cor em hexadecimal (ex.: `#1976d2`)
+- `date`: data e hora do evento
+- `organizer`: usuário criador
+- `members`: participantes
+- `comments`: comentários
 
-- **ACADEMICO:** Eventos acadêmicos (palestras, seminários, etc.)
-- **FESTA:** Eventos sociais e festivos
+### Comentário
+- `id`, `content`, `author`, `createdAt`
 
-## Autenticação
+## Regras de Visibilidade
 
-Para rotas protegidas, inclua o token JWT no header:
-```
-Authorization: Bearer <seu_token_jwt>
-```
+- Um usuário só vê os eventos em que é criador ou participante.
+- Apenas o criador pode editar ou excluir o evento.
+- Qualquer participante pode comentar; apenas o autor exclui o próprio comentário.
 
 ## CORS
 
-A API está configurada para aceitar requisições de qualquer origem (`*`). 
+A API está configurada para aceitar requisições de qualquer origem (`*`).

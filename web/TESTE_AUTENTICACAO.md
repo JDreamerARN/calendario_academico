@@ -4,38 +4,39 @@
 
 ### 1. Login e Verificação Inicial
 
-1. **Faça login** no sistema com credenciais válidas
+1. **Faça login** no sistema com um usuário cadastrado
 2. **Abra o Console do Navegador** (F12 → Console)
 3. **Observe os logs** durante o processo de login:
    ```
-   Iniciando login para usuário: admin
+   Iniciando login para usuário: maria
    Login bem-sucedido, ID do usuário: 1
    Buscando dados completos do usuário...
-   Token adicionado à requisição: /api/users/1
-   Dados do usuário obtidos: {id: 1, username: "admin", ...}
+   Dados do usuário obtidos: {id: 1, username: "maria", ...}
    Login concluído com sucesso
    ```
 
-### 2. Teste Manual no Calendário
+### 2. Verificação Manual do Token
 
-1. **Acesse o calendário** após o login
-2. **Clique no botão "Testar Token"** no canto superior direito
-3. **Verifique os logs** no console:
-   ```
-   Token atual: eyJhbGciOiJIUzUxMiJ9...
-   Usuário atual: {id: 1, username: "admin", ...}
-   Token adicionado à requisição: /api/auth/test
-   Teste de autenticação: API de autenticação funcionando!
-   Token adicionado à requisição: /api/users/1
-   Dados do usuário obtidos: {id: 1, username: "admin", ...}
-   ```
+No console do navegador:
+
+```javascript
+// Token salvo no login
+const token = localStorage.getItem('token');
+console.log('Token:', token);
+
+// Testar endpoint público da API
+fetch('http://localhost:8080/api/auth/test')
+  .then(r => r.text())
+  .then(console.log); // "API de autenticação funcionando!"
+```
 
 ## Estrutura do Token JWT
 
 O token JWT contém as seguintes informações:
 ```json
 {
-  "sub": "admin",
+  "sub": "maria",
+  "userId": 1,
   "iat": 1751827711,
   "exp": 1751914111
 }
@@ -56,8 +57,8 @@ Content-Type: application/json
 
 ## Endpoints que Requerem Autenticação
 
-- ✅ `/api/users/*` - Gerenciamento de usuários
-- ✅ `/api/events/*` - Gerenciamento de eventos
+- ✅ `/api/users/*` - Dados do próprio usuário e resumo de usuários
+- ✅ `/api/events/*` - Eventos, participantes e comentários
 - ✅ `/api/auth/test` - Teste de autenticação
 - ❌ `/api/auth/login` - Login (não requer token)
 - ❌ `/api/auth/register` - Registro (não requer token)
@@ -79,14 +80,21 @@ Content-Type: application/json
    ```
 
 3. **Verifique o interceptor do Axios**:
-   - Os logs devem mostrar "Token adicionado à requisição" para cada chamada
+   - O header `Authorization` deve estar presente em cada requisição protegida
    - Se não aparecer, o token não está no localStorage
 
 ### Se receber erro 401:
 
-1. **Token expirado**: Faça login novamente
-2. **Token inválido**: Limpe o localStorage e faça login
-3. **Problema no backend**: Verifique se o backend está validando o token corretamente
+1. **Token expirado**: faça login novamente
+2. **Token inválido**: limpe o localStorage e faça login
+3. **Problema no backend**: verifique se o backend está validando o token corretamente
+
+### Se receber erro 403:
+
+- O usuário não tem permissão para o recurso. Exemplos:
+  - Tentar acessar um evento do qual não participa
+  - Tentar editar/excluir um evento que não criou
+  - Tentar excluir um comentário de outro usuário
 
 ## Limpeza de Dados
 
@@ -97,23 +105,8 @@ localStorage.removeItem('user');
 window.location.href = '/login';
 ```
 
-## Logs de Debug Adicionados
-
-### No ApiService (api.ts)
-- Log quando token é adicionado à requisição
-- Log quando não há token disponível
-
-### No AuthContext
-- Log detalhado do processo de login
-- Log de erros com status e dados da resposta
-
-### No Calendar
-- Botão "Testar Token" para verificação manual
-- Logs de token atual e dados do usuário
-
 ## Próximos Passos
 
 1. Teste o login e verifique os logs
-2. Clique no botão "Testar Token" no calendário
-3. Verifique se todas as requisições estão incluindo o header Authorization
-4. Teste diferentes endpoints que requerem autenticação 
+2. Verifique se as requisições incluem o header `Authorization`
+3. Teste os endpoints de eventos e comentários

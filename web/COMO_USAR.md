@@ -1,23 +1,31 @@
-# 🚀 Como Usar o Frontend - Sistema de Eventos Acadêmicos
+# 🚀 Como Usar o Calendário de Eventos
 
-## ✅ Status do Projeto
+## ✅ Visão Geral
 
-O projeto está **FUNCIONANDO** e rodando em: **http://localhost:3000**
+Calendário compartilhado de uso geral, acessível em: **http://localhost:3000**
 
-## 🎯 Funcionalidades Implementadas
+Crie uma conta, crie eventos, convide participantes, organize com tags e cores e converse por comentários. Cada usuário vê apenas os eventos dos quais participa.
+
+## 🎯 Funcionalidades
 
 ### ✅ Autenticação
 - [x] Login com validação
-- [x] Registro de usuários
+- [x] Registro de usuários (login imediato, sem aprovação)
 - [x] Proteção de rotas
 - [x] Logout
 
-### ✅ Calendário Acadêmico
+### ✅ Calendário
 - [x] Visualização mensal
-- [x] Filtros por tipo de evento
-- [x] Filtros por tipo de usuário
+- [x] Filtro por tag
+- [x] Cor do evento aplicada no calendário
 - [x] Modal de detalhes do evento
 - [x] Responsividade total
+
+### ✅ Eventos
+- [x] Tags livres
+- [x] Cor personalizada
+- [x] Participantes
+- [x] Comentários
 
 ### ✅ Interface
 - [x] Design moderno com Material-UI
@@ -27,22 +35,18 @@ O projeto está **FUNCIONANDO** e rodando em: **http://localhost:3000**
 
 ## 🛠️ Como Executar
 
-### Método 1: Script Automático (Recomendado)
-```bash
-cd frontend
-./start.sh
-```
+> Recomendado: usar Docker. Veja [DESENVOLVIMENTO.md](../DESENVOLVIMENTO.md).
 
-### Método 2: Comandos Manuais
+### Comandos Manuais
 ```bash
-cd frontend
+cd web
 npm install --legacy-peer-deps
 npm start
 ```
 
-### Método 3: Se houver problemas
+### Se houver problemas
 ```bash
-cd frontend
+cd web
 rm -rf node_modules package-lock.json
 npm install --legacy-peer-deps
 npm start
@@ -52,7 +56,15 @@ npm start
 
 1. **Abra o navegador**
 2. **Acesse:** http://localhost:3000
-3. **Faça login ou registre-se**
+3. **Registre-se e faça login**
+
+## 📝 Fluxo de Uso
+
+1. **Crie sua conta** em `/register` e faça login.
+2. **Crie um evento** pelo botão "+": informe título, descrição, tags, cor, data e participantes.
+3. **Convide participantes** — eles passam a ver o evento no próprio calendário.
+4. **Comente** dentro do evento para combinar detalhes.
+5. **Filtre por tag** para encontrar eventos rapidamente.
 
 ## 📱 Testando Responsividade
 
@@ -68,16 +80,14 @@ npm start
 - Menu hambúrguer
 - Interface otimizada
 
-## 🔧 Configuração do Backend
+## 🔧 Backend
 
-Para que o frontend funcione completamente, o backend deve estar rodando:
+Para que o frontend funcione, o backend deve estar rodando em **http://localhost:8080**.
 
 ```bash
-# No diretório backend
-mvn spring-boot:run
+# Via Docker (recomendado), na raiz do projeto
+docker compose up
 ```
-
-**URL do Backend:** http://localhost:8080
 
 ## 🐛 Problemas Comuns
 
@@ -110,8 +120,10 @@ PORT=3001 npm start
 ### Calendário
 - [ ] Calendário mensal exibe
 - [ ] Navegação entre meses funciona
-- [ ] Filtros funcionam
+- [ ] Filtro por tag funciona
+- [ ] Cor do evento aparece corretamente
 - [ ] Modal de evento abre
+- [ ] Comentários funcionam
 - [ ] Responsividade funciona
 
 ### Interface
@@ -119,14 +131,6 @@ PORT=3001 npm start
 - [ ] Logout funciona
 - [ ] Loading states aparecem
 - [ ] Erros são exibidos
-
-## 🎨 Recursos Visuais
-
-- **Tema:** Material-UI personalizado
-- **Cores:** Azul primário, rosa secundário
-- **Tipografia:** Roboto
-- **Ícones:** Material Icons
-- **Responsividade:** Total
 
 ## 📊 Tecnologias
 
@@ -137,13 +141,6 @@ PORT=3001 npm start
 - **Axios**
 - **date-fns**
 
-## 🚀 Próximos Passos
-
-1. **Teste todas as funcionalidades**
-2. **Verifique responsividade**
-3. **Teste integração com backend**
-4. **Reporte bugs se encontrar**
-
 ## 📞 Suporte
 
 Se encontrar problemas:
@@ -151,7 +148,3 @@ Se encontrar problemas:
 1. **Consulte:** `TROUBLESHOOTING.md`
 2. **Verifique logs:** Console do navegador
 3. **Teste API:** `curl http://localhost:8080/api/auth/test`
-
----
-
-**🎉 O projeto está pronto para uso!** 

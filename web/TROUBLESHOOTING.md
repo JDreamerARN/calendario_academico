@@ -9,13 +9,13 @@
 **Solução:**
 ```bash
 # Certifique-se de estar no diretório correto
-cd frontend
+cd web
 
 # Verifique se o package.json existe
 ls -la package.json
 
 # Se não existir, reinstale as dependências
-npm install
+npm install --legacy-peer-deps
 ```
 
 ### 2. Erros de TypeScript com Material-UI Grid
@@ -94,11 +94,11 @@ npm install
 
 **Soluções:**
 1. **Verifique se o backend está rodando**
-2. **Teste a API diretamente:**
+2. **Teste a API diretamente** (use um usuário que você cadastrou):
    ```bash
    curl -X POST http://localhost:8080/api/auth/login \
      -H "Content-Type: application/json" \
-     -d '{"username":"admin","password":"admin"}'
+     -d '{"username":"seu_usuario","password":"sua_senha"}'
    ```
 
 3. **Verifique o token no localStorage:**

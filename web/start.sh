@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Script de inicialização do Frontend - Sistema de Eventos Acadêmicos
+# Script de inicialização do Frontend - Calendário de Eventos
 
-echo "🚀 Iniciando Frontend - Sistema de Eventos Acadêmicos"
+echo "🚀 Iniciando Frontend - Calendário de Eventos"
 echo "=================================================="
 
 # Verificar se estamos no diretório correto
 if [ ! -f "package.json" ]; then
     echo "❌ Erro: package.json não encontrado!"
-    echo "Certifique-se de estar no diretório frontend/"
+    echo "Certifique-se de estar no diretório web/"
     exit 1
 fi
 

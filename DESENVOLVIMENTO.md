@@ -1,6 +1,8 @@
 # Ambiente de desenvolvimento local
 
-Este guia descreve como subir o **Sistema de Eventos Acadêmicos** com Docker para desenvolvimento, com hot reload no frontend e no backend.
+Este guia descreve como subir o **Calendário de Eventos** com Docker para desenvolvimento, com hot reload no frontend e no backend.
+
+O projeto é um calendário compartilhado de uso geral: usuários criam eventos entre si, organizam com tags e cores, conversam por comentários e veem apenas os eventos dos quais participam.
 
 ## Pré-requisitos
 
@@ -59,7 +61,7 @@ Sua máquina
 |-----------|------------------------|------------------------------------|
 | Frontend  | `3000`                 | React + TypeScript (CRA)           |
 | Backend   | —                      | Spring Boot 3 (Java 17)            |
-| MySQL     | `127.0.0.1:3306`       | Banco `eventos_academicos`         |
+| MySQL     | `127.0.0.1:3306`       | Banco `calendario`                 |
 
 O backend **não** é exposto diretamente no host. As chamadas à API passam pelo proxy do frontend em `/api`.
 
@@ -81,7 +83,7 @@ O `docker-compose.yml` está configurado para desenvolvimento. Alterações no c
 |----------|-----------------------|
 | Host     | `localhost`           |
 | Porta    | `3306`                |
-| Banco    | `eventos_academicos`  |
+| Banco    | `calendario`          |
 | Usuário  | `root`                |
 | Senha    | `root123`             |
 
@@ -104,36 +106,25 @@ ports:
 
 E use a porta `3307` no DBeaver.
 
-### Aprovar usuário manualmente via SQL
-
-Usuários do tipo **ALUNO** e **PROFESSOR** precisam de aprovação de um administrador antes de fazer login. Para aprovar pelo DBeaver ou terminal:
-
-```sql
-UPDATE users SET approved = 1 WHERE username = 'nome_do_usuario';
-```
-
-Ou pelo terminal:
-
-```powershell
-docker compose exec mysql mysql -uroot -proot123 eventos_academicos -e "UPDATE users SET approved = 1 WHERE username = 'nome_do_usuario';"
-```
-
-**Administradores** (`ADMINISTRADOR`) são aprovados automaticamente no registro.
-
 ## Autenticação e registro
 
 - **Registro:** http://localhost:3000/register
 - **Login:** http://localhost:3000/login
 - A API de autenticação fica em `/api/auth/*` (proxied pelo frontend)
 
+Não há papéis de usuário nem aprovação: ao se registrar, o usuário já pode fazer login imediatamente.
+
 Mensagens comuns no login:
 
-| Mensagem                                              | Significado                                      |
-|-------------------------------------------------------|--------------------------------------------------|
-| `Credenciais inválidas`                               | Usuário ou senha incorretos                      |
-| `Conta pendente de aprovação pelo administrador.`     | Senha correta, mas conta ainda não aprovada      |
+| Mensagem                  | Significado                  |
+|---------------------------|------------------------------|
+| `Credenciais inválidas`   | Usuário ou senha incorretos  |
 
 Documentação completa da API: [API_DOCUMENTATION.md](./API_DOCUMENTATION.md)
+
+## Schema do banco
+
+O backend usa `spring.jpa.hibernate.ddl-auto=update`, que cria e atualiza as tabelas automaticamente a partir das entidades JPA na inicialização. Não é necessário rodar migrações manualmente em desenvolvimento.
 
 ## Comandos úteis
 
@@ -158,7 +149,7 @@ docker compose up --build
 ## Estrutura do projeto
 
 ```
-calendario_academico/
+calendario/
 ├── backend/          # API Spring Boot
 ├── web/              # Frontend React
 ├── docker-compose.yml          # Desenvolvimento (hot reload)
@@ -176,6 +167,20 @@ docker compose -f docker-compose.prod.yml up --build
 
 Nesse modo, o frontend é servido pelo nginx na porta `3000` e as imagens usam `Dockerfile.prod` em `backend/` e `web/`.
 
+## Acesso pela rede local
+
+Para que outras pessoas na mesma rede acessem o sistema:
+
+1. Suba o projeto normalmente (`docker compose up`).
+2. Descubra o IP da sua máquina (`ipconfig` no Windows; use o IPv4 da rede Wi-Fi/Ethernet).
+3. Acesse de outro dispositivo: `http://SEU_IP:3000`.
+4. Se necessário, libere a porta no firewall do Windows (PowerShell como administrador):
+   ```powershell
+   New-NetFirewallRule -DisplayName "Calendario Eventos 3000" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+   ```
+
+Apenas a porta `3000` precisa estar acessível; backend e MySQL permanecem na rede interna do Docker.
+
 ## Solução de problemas
 
 ### Erro 403 em `/api/auth/*`
@@ -185,10 +190,6 @@ O proxy do CRA remove o prefixo `/api` ao encaminhar requisições. O arquivo `w
 ```powershell
 docker compose restart frontend
 ```
-
-### Login falha após registro bem-sucedido
-
-Verifique a coluna `approved` na tabela `users`. Alunos e professores começam com `approved = false`. Veja a seção [Aprovar usuário manualmente via SQL](#aprovar-usuário-manualmente-via-sql).
 
 ### Backend não conecta ao MySQL
 

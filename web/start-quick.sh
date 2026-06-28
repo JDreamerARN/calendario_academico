@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Iniciando Sistema de Eventos Acadêmicos..."
+echo "🚀 Iniciando Calendário de Eventos..."
 echo ""
 
 # Verificar se o backend está rodando

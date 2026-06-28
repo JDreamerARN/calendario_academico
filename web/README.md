@@ -1,6 +1,8 @@
-# Frontend - Sistema de Eventos Acadêmicos
+# Frontend - Calendário de Eventos
 
-Este é o frontend do Sistema de Eventos Acadêmicos, desenvolvido em React com TypeScript e Material-UI.
+Este é o frontend do Calendário de Eventos, desenvolvido em React com TypeScript e Material-UI.
+
+É um calendário compartilhado de uso geral: usuários criam eventos entre si, organizam com tags livres e uma cor personalizada, conversam por comentários e veem apenas os eventos dos quais participam.
 
 ## 🚀 Tecnologias Utilizadas
 
@@ -17,18 +19,28 @@ Este é o frontend do Sistema de Eventos Acadêmicos, desenvolvido em React com 
 ```
 src/
 ├── components/          # Componentes reutilizáveis
-│   ├── Calendar.tsx     # Componente do calendário
-│   └── PrivateRoute.tsx # Rota protegida
+│   ├── Calendar.tsx          # Calendário mensal
+│   ├── AddEventModal.tsx     # Modal de criação de evento
+│   ├── EventDetailsModal.tsx # Detalhes, edição e comentários
+│   ├── TagInput.tsx          # Campo de tags livres
+│   ├── ColorPicker.tsx       # Seletor de cor do evento
+│   └── PrivateRoute.tsx      # Rota protegida
 ├── contexts/            # Contextos React
 │   └── AuthContext.tsx  # Contexto de autenticação
+├── hooks/               # Hooks customizados
+│   ├── useEvents.ts     # Eventos e mutations
+│   └── useUserEvents.ts # Eventos do usuário
 ├── pages/               # Páginas da aplicação
 │   ├── Login.tsx        # Página de login
 │   ├── Register.tsx     # Página de registro
-│   └── CalendarPage.tsx # Página principal do calendário
+│   ├── CalendarPage.tsx # Página principal do calendário
+│   └── Profile.tsx      # Perfil do usuário
 ├── services/            # Serviços de API
 │   └── api.ts           # Cliente da API
 ├── types/               # Definições de tipos TypeScript
 │   └── index.ts         # Interfaces e tipos
+├── utils/               # Utilitários
+│   └── tagColors.ts     # Cores de tags e contraste
 └── App.tsx              # Componente principal
 ```
 
@@ -36,14 +48,21 @@ src/
 
 ### Autenticação
 - **Login**: Autenticação de usuários com JWT
-- **Registro**: Cadastro de novos usuários
+- **Registro**: Cadastro de novos usuários (login imediato, sem aprovação)
 - **Proteção de Rotas**: Rotas protegidas por autenticação
 
-### Calendário Acadêmico
+### Calendário
 - **Visualização Mensal**: Calendário com navegação entre meses
-- **Filtros**: Por tipo de evento (Acadêmico/Festa) e tipo de usuário
-- **Modal de Detalhes**: Exibição completa dos dados do evento
+- **Cor do evento**: Cada evento tem uma cor escolhida na criação, usada no calendário e nos detalhes
+- **Filtro por tag**: Filtra os eventos do mês por tag
+- **Modal de Detalhes**: Exibe dados completos, participantes e comentários
 - **Responsividade**: Interface adaptada para mobile e desktop
+
+### Eventos
+- **Tags livres**: Organize cada evento com quantas tags quiser
+- **Participantes**: Convide outros usuários para o evento
+- **Comentários**: Converse com os participantes dentro do evento
+- **Visibilidade**: Cada usuário vê apenas os eventos dos quais participa
 
 ### Interface
 - **Design Moderno**: Interface limpa e intuitiva
@@ -55,13 +74,15 @@ src/
 
 ### Pré-requisitos
 - Node.js (versão 18 ou superior)
-- npm ou yarn
+- npm
 - Backend rodando na porta 8080
+
+> A forma recomendada de subir todo o ambiente é via Docker. Veja [DESENVOLVIMENTO.md](../DESENVOLVIMENTO.md).
 
 ### Instalação
 ```bash
 # Instalar dependências
-npm install
+npm install --legacy-peer-deps
 
 # Executar em modo de desenvolvimento
 npm start
@@ -71,10 +92,12 @@ npm run build
 ```
 
 ### Variáveis de Ambiente
-O frontend está configurado para se conectar ao backend na URL:
+O frontend se conecta ao backend pela variável:
 ```
-http://localhost:8080/api
+REACT_APP_API_URL=http://localhost:8080/api
 ```
+
+Em desenvolvimento com Docker, o valor padrão é `/api` (proxied para o backend).
 
 ## 📱 Responsividade
 
@@ -100,10 +123,6 @@ Para fazer o deploy:
 npm run build
 ```
 
-2. Os arquivos estarão na pasta `build/`
+2. Os arquivos estarão na pasta `build/`.
 
-3. Faça o upload dos arquivos para seu servidor web
-
-## 📄 Licença
-
-Este projeto faz parte do Sistema de Eventos Acadêmicos.
+3. Faça o upload dos arquivos para seu servidor web (ou use o `Dockerfile.prod` com nginx).
